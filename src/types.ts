@@ -16,9 +16,9 @@ export type AuthLink = {
 }
 
 export enum AuthLinkType {
-  SIGNER = "SIGNER",
-  ECDSA_EPHEMERAL = "ECDSA_EPHEMERAL",
-  ECDSA_SIGNED_ENTITY = "ECDSA_SIGNED_ENTITY"
+  SIGNER = 'SIGNER',
+  ECDSA_EPHEMERAL = 'ECDSA_EPHEMERAL',
+  ECDSA_SIGNED_ENTITY = 'ECDSA_SIGNED_ENTITY'
 }
 
 export type AuditInfo = {
@@ -39,8 +39,8 @@ export type AuditInfo = {
   }
 }
 export enum EntityVersion {
-  V2 = "v2",
-  V3 = "v3"
+  V2 = 'v2',
+  V3 = 'v3'
 }
 
 export type Timestamp = number

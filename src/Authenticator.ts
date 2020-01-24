@@ -1,17 +1,32 @@
-import { hash, sign, recover } from "eth-crypto"
-import { AuthIdentity, AuthChain, EthAddress, AuthLinkType, IdentityType, AuditInfo, AuthLink, Signature } from "./types"
+import { hash, sign, recover } from 'eth-crypto'
+import {
+  AuthIdentity,
+  AuthChain,
+  EthAddress,
+  AuthLinkType,
+  IdentityType,
+  AuditInfo,
+  AuthLink,
+  Signature
+} from './types'
 
 export class Authenticator {
   /** Validate that the signature belongs to the Ethereum address */
-  static async validateSignature(expectedFinalAuthority: string, authChain: AuthChain): Promise<boolean> {
-    let currentAuthority: string = ""
-    authChain.forEach(authLink => {
+  static async validateSignature(
+    expectedFinalAuthority: string,
+    authChain: AuthChain
+  ): Promise<boolean> {
+    let currentAuthority: string = ''
+
+    for (let authLink of authChain) {
       const validator: ValidatorType = getValidatorByType(authLink.type)
       const { error, nextAuthority } = validator(currentAuthority, authLink)
-      if (!error) {
-        currentAuthority = nextAuthority ? nextAuthority : ""
+      if (error) {
+        return false
       }
-    })
+      currentAuthority = nextAuthority ? nextAuthority : ''
+    }
+
     return currentAuthority === expectedFinalAuthority
   }
 
@@ -21,12 +36,16 @@ export class Authenticator {
     return msgHash
   }
 
-  static createSimpleAuthChain(finalPayload: string, ownerAddress: EthAddress, signature: Signature): AuthChain {
+  static createSimpleAuthChain(
+    finalPayload: string,
+    ownerAddress: EthAddress,
+    signature: Signature
+  ): AuthChain {
     return [
       {
         type: AuthLinkType.SIGNER,
         payload: ownerAddress,
-        signature: ""
+        signature: ''
       },
       {
         type: AuthLinkType.ECDSA_SIGNED_ENTITY,
@@ -36,18 +55,41 @@ export class Authenticator {
     ]
   }
 
-  static createAuthChain(ownerIdentity: IdentityType, ephemeralIdentity: IdentityType, ephemeralMinutesDuration: number, entityId: string): AuthChain {
+  static createAuthChain(
+    ownerIdentity: IdentityType,
+    ephemeralIdentity: IdentityType,
+    ephemeralMinutesDuration: number,
+    entityId: string
+  ): AuthChain {
     let expiration = new Date()
     expiration.setMinutes(expiration.getMinutes() + ephemeralMinutesDuration)
 
     const ephemeralMessage = `Decentraland Login\nEphemeral address: ${ephemeralIdentity.address}\nExpiration: ${expiration}`
-    const firstSignature = Authenticator.createSignature(ownerIdentity, ephemeralMessage)
-    const secondSignature = Authenticator.createSignature(ephemeralIdentity, entityId)
+    const firstSignature = Authenticator.createSignature(
+      ownerIdentity,
+      ephemeralMessage
+    )
+    const secondSignature = Authenticator.createSignature(
+      ephemeralIdentity,
+      entityId
+    )
 
     const authChain: AuthChain = [
-      { type: AuthLinkType.SIGNER, payload: ownerIdentity.address, signature: "" },
-      { type: AuthLinkType.ECDSA_EPHEMERAL, payload: ephemeralMessage, signature: firstSignature },
-      { type: AuthLinkType.ECDSA_SIGNED_ENTITY, payload: entityId, signature: secondSignature }
+      {
+        type: AuthLinkType.SIGNER,
+        payload: ownerIdentity.address,
+        signature: ''
+      },
+      {
+        type: AuthLinkType.ECDSA_EPHEMERAL,
+        payload: ephemeralMessage,
+        signature: firstSignature
+      },
+      {
+        type: AuthLinkType.ECDSA_SIGNED_ENTITY,
+        payload: entityId,
+        signature: secondSignature
+      }
     ]
 
     return authChain
@@ -66,8 +108,12 @@ export class Authenticator {
     const firstSignature = await signer(ephemeralMessage)
 
     const authChain: AuthChain = [
-      { type: AuthLinkType.SIGNER, payload: ethAddress, signature: "" },
-      { type: AuthLinkType.ECDSA_EPHEMERAL, payload: ephemeralMessage, signature: firstSignature }
+      { type: AuthLinkType.SIGNER, payload: ethAddress, signature: '' },
+      {
+        type: AuthLinkType.ECDSA_EPHEMERAL,
+        payload: ephemeralMessage,
+        signature: firstSignature
+      }
     ]
 
     return {
@@ -78,12 +124,25 @@ export class Authenticator {
   }
 
   static signPayload(authIdentity: AuthIdentity, entityId: string) {
-    const secondSignature = Authenticator.createSignature(authIdentity.ephemeralIdentity, entityId)
-    return [...authIdentity.authChain, { type: AuthLinkType.ECDSA_SIGNED_ENTITY, payload: entityId, signature: secondSignature }]
+    const secondSignature = Authenticator.createSignature(
+      authIdentity.ephemeralIdentity,
+      entityId
+    )
+    return [
+      ...authIdentity.authChain,
+      {
+        type: AuthLinkType.ECDSA_SIGNED_ENTITY,
+        payload: entityId,
+        signature: secondSignature
+      }
+    ]
   }
 
   static createSignature(identity: IdentityType, message: string) {
-    return sign(identity.privateKey, Authenticator.createEthereumMessageHash(message))
+    return sign(
+      identity.privateKey,
+      Authenticator.createEthereumMessageHash(message)
+    )
   }
 
   static ownerAddress(auditInfo: AuditInfo): EthAddress {
@@ -92,19 +151,28 @@ export class Authenticator {
         return auditInfo.authChain[0].payload
       }
     }
-    return "Invalid-Owner-Address"
+    return 'Invalid-Owner-Address'
   }
 }
 
-type ValidatorType = (authority: string, authLink: AuthLink) => { error?: boolean; nextAuthority?: string }
+type ValidatorType = (
+  authority: string,
+  authLink: AuthLink
+) => { error?: boolean; nextAuthority?: string }
 
 const SIGNER_VALIDATOR: ValidatorType = (_: string, authLink: AuthLink) => {
   return { nextAuthority: authLink.payload }
 }
 
-const ECDSA_SIGNED_ENTITY_VALIDATOR: ValidatorType = (authority: string, authLink: AuthLink) => {
+const ECDSA_SIGNED_ENTITY_VALIDATOR: ValidatorType = (
+  authority: string,
+  authLink: AuthLink
+) => {
   try {
-    const signerAddress = recover(authLink.signature, Authenticator.createEthereumMessageHash(authLink.payload))
+    const signerAddress = recover(
+      authLink.signature,
+      Authenticator.createEthereumMessageHash(authLink.payload)
+    )
     if (authority.toLocaleLowerCase() === signerAddress.toLocaleLowerCase()) {
       return { nextAuthority: authLink.payload }
     }
@@ -114,17 +182,27 @@ const ECDSA_SIGNED_ENTITY_VALIDATOR: ValidatorType = (authority: string, authLin
   return { error: true }
 }
 
-const ECDSA_EPHEMERAL_VALIDATOR: ValidatorType = (authority: string, authLink: AuthLink) => {
+const ECDSA_EPHEMERAL_VALIDATOR: ValidatorType = (
+  authority: string,
+  authLink: AuthLink
+) => {
   try {
     // authLink payload structure: <human-readable message>\nEphemeral address: <ephemeral-eth-address>\nExpiration: <timestamp>
     // authLink payload example  : Decentraland Login\nEphemeral address: 0x123456\nExpiration: 2020-01-20T22:57:11.334Z
-    const payloadParts: string[] = authLink.payload.split("\n")
-    const ephemeralAddress: string = payloadParts[1].substring("Ephemeral address: ".length)
-    const expirationString: string = payloadParts[2].substring("Expiration: ".length)
+    const payloadParts: string[] = authLink.payload.split('\n')
+    const ephemeralAddress: string = payloadParts[1].substring(
+      'Ephemeral address: '.length
+    )
+    const expirationString: string = payloadParts[2].substring(
+      'Expiration: '.length
+    )
     const expiration = Date.parse(expirationString)
 
     if (expiration > Date.now()) {
-      const signerAddress = recover(authLink.signature, Authenticator.createEthereumMessageHash(authLink.payload))
+      const signerAddress = recover(
+        authLink.signature,
+        Authenticator.createEthereumMessageHash(authLink.payload)
+      )
       if (authority.toLocaleLowerCase() === signerAddress.toLocaleLowerCase()) {
         return { nextAuthority: ephemeralAddress }
       }
