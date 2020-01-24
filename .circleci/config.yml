@@ -82,13 +82,13 @@ jobs:
             - dependencies-{{ checksum "package-lock.json" }}
       - run:
           name: Install node dependencies
-          command: npm install && npm run build
+          command: npm install
       - restore_cache:
           keys:
             - dist-{{ .Branch }}-{{ .Revision }}
       - run:
           name: Semantic release
-          command: rm -rf node_modules src test && npm run semantic-release
+          command: npm run semantic-release
 
 workflows:
   version: 2
