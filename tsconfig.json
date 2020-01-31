@@ -3,7 +3,7 @@
     "baseUrl": ".",
     "outDir": "dist",
     "module": "commonjs",
-    "target": "es5",
+    "target": "es2017",
     "lib": ["es2017", "dom"],
     "sourceMap": true,
     "moduleResolution": "node",
@@ -25,6 +25,8 @@
     "acceptance-tests",
     "webpack",
     "jest",
+    "dist",
+    "src/contracts",
     "src/setupTests.ts"
   ]
 }
