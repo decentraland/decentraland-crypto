@@ -79,11 +79,11 @@ describe('Decentraland Crypto', function () {
     })
 
     it('reverts if signature was expired', async function () {
-
       const authority = '0x1f19d3ec0be294f913967364c1d5b416e6a74555'
       const authLink = {
         type: AuthLinkType.ECDSA_PERSONAL_EPHEMERAL,
-        payload: 'Decentraland Login\nEphemeral address: 0x1F19d3EC0BE294f913967364c1D5B416e6A74555\nExpiration: Tue Jan 21 2020 16:34:32 GMT+0000 (Coordinated Universal Time)',
+        payload:
+          'Decentraland Login\nEphemeral address: 0x1F19d3EC0BE294f913967364c1D5B416e6A74555\nExpiration: Tue Jan 21 2020 16:34:32 GMT+0000 (Coordinated Universal Time)',
         signature: PERSONAL_SIGNATURE
       }
 
