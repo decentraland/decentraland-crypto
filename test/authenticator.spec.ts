@@ -48,7 +48,9 @@ describe('Decentraland Crypto', function () {
       const isValid = await Authenticator.validateSignature(
         'message',
         chain,
-        null
+        new HttpProvider(
+          'https://mainnet.infura.io/v3/640777fe168f4b0091c93726b4f0463a'
+        )
       )
 
       expect(isValid).to.be.equal(true)

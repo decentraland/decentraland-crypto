@@ -20,7 +20,7 @@ export class Authenticator {
   static async validateSignature(
     expectedFinalAuthority: string,
     authChain: AuthChain,
-    provider: any
+    provider: EthereumProvider
   ): Promise<boolean> {
     let currentAuthority: string = ''
 
