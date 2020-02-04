@@ -17,7 +17,9 @@ export type AuthLink = {
 
 export enum AuthLinkType {
   SIGNER = 'SIGNER',
-  ECDSA_EPHEMERAL = 'ECDSA_EPHEMERAL',
+  ECDSA_PERSONAL_EPHEMERAL = 'ECDSA_EPHEMERAL',
+  // https://github.com/ethereum/EIPs/issues/1654
+  ECDSA_EIP_1654_EPHEMERAL = 'ECDSA_EIP_1654_EPHEMERAL',
   ECDSA_SIGNED_ENTITY = 'ECDSA_SIGNED_ENTITY'
 }
 

@@ -1,0 +1,9 @@
+{
+  "outputPath": "./src/contracts",
+  "contracts": {
+    "SignatureValidator": {
+      "source": "files",
+      "abiFile": "./src/contracts/artifacts/SignatureValidator.json"
+    }
+  }
+}
