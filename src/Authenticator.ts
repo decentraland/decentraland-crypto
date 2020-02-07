@@ -84,7 +84,10 @@ export class Authenticator {
     let expiration = new Date()
     expiration.setMinutes(expiration.getMinutes() + ephemeralMinutesDuration)
 
-    const ephemeralMessage = `Decentraland Login\nEphemeral address: ${ephemeralIdentity.address}\nExpiration: ${expiration}`
+    const ephemeralMessage = Authenticator.getEphemeralMessage(
+      ephemeralIdentity.address,
+      expiration
+    )
     const firstSignature = Authenticator.createSignature(
       ownerIdentity,
       ephemeralMessage
@@ -124,7 +127,10 @@ export class Authenticator {
     let expiration = new Date()
     expiration.setMinutes(expiration.getMinutes() + ephemeralMinutesDuration)
 
-    const ephemeralMessage = `Decentraland Login\nEphemeral address: ${ephemeralIdentity.address}\nExpiration: ${expiration}`
+    const ephemeralMessage = Authenticator.getEphemeralMessage(
+      ephemeralIdentity.address,
+      expiration
+    )
     const firstSignature = await signer(ephemeralMessage)
 
     const authChain: AuthChain = [
@@ -172,6 +178,10 @@ export class Authenticator {
       }
     }
     return 'Invalid-Owner-Address'
+  }
+
+  static getEphemeralMessage(ephemeralAddress: string, expiration: Date) {
+    return `Decentraland Login\nEphemeral address: ${ephemeralAddress}\nExpiration: ${expiration.toISOString()}`
   }
 }
 
