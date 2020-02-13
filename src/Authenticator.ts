@@ -14,13 +14,15 @@ import {
   AuthLink,
   Signature
 } from './types'
+import { moveMinutes } from './helper/utils'
 
 export class Authenticator {
   /** Validate that the signature belongs to the Ethereum address */
   static async validateSignature(
     expectedFinalAuthority: string,
     authChain: AuthChain,
-    provider: EthereumProvider
+    provider: EthereumProvider,
+    dateToValidateExpirationInMillis: number = Date.now()
   ): Promise<boolean> {
     let currentAuthority: string = ''
 
@@ -29,7 +31,7 @@ export class Authenticator {
       const { error, nextAuthority } = await validator(
         currentAuthority,
         authLink,
-        provider
+        { provider, dateToValidateExpirationInMillis }
       )
       if (error) {
         return false
@@ -81,8 +83,7 @@ export class Authenticator {
     ephemeralMinutesDuration: number,
     entityId: string
   ): AuthChain {
-    let expiration = new Date()
-    expiration.setMinutes(expiration.getMinutes() + ephemeralMinutesDuration)
+    const expiration = moveMinutes(ephemeralMinutesDuration)
 
     const ephemeralMessage = Authenticator.getEphemeralMessage(
       ephemeralIdentity.address,
@@ -188,8 +189,13 @@ export class Authenticator {
 type ValidatorType = (
   authority: string,
   authLink: AuthLink,
-  provider?: EthereumProvider
+  options?: ValidationOptions,
 ) => Promise<{ error?: boolean; nextAuthority?: string }>
+
+type ValidationOptions = {
+    dateToValidateExpirationInMillis?: number,
+    provider?: EthereumProvider
+}
 
 export const SIGNER_VALIDATOR: ValidatorType = async (
   _: string,
@@ -218,14 +224,16 @@ export const ECDSA_SIGNED_ENTITY_VALIDATOR: ValidatorType = async (
 
 export const ECDSA_PERSONAL_EPHEMERAL_VALIDATOR: ValidatorType = async (
   authority: string,
-  authLink: AuthLink
+  authLink: AuthLink,
+  options?: ValidationOptions,
 ) => {
   try {
     const { message, ephemeralAddress, expiration } = parseEmphemeralPayload(
       authLink.payload
     )
 
-    if (expiration > Date.now()) {
+    const dateToValidateExpirationInMillis = options?.dateToValidateExpirationInMillis ?options?.dateToValidateExpirationInMillis : Date.now()
+    if (expiration > dateToValidateExpirationInMillis) {
       const signerAddress = recover(
         authLink.signature,
         Authenticator.createEthereumMessageHash(message)
@@ -243,12 +251,13 @@ export const ECDSA_PERSONAL_EPHEMERAL_VALIDATOR: ValidatorType = async (
 export const ECDSA_EIP_1654_EPHEMERAL_VALIDATOR: ValidatorType = async (
   authority: string,
   authLink: AuthLink,
-  provider: EthereumProvider
+  options?: ValidationOptions,
 ) => {
   // bytes4(keccak256("isValidSignature(bytes32,bytes)")
   const ERC1271_MAGIC_VALUE = '0x1626ba7e'
 
   try {
+    const provider = options!.provider
     if (!provider) {
       throw new Error('Missing provider')
     }
@@ -263,7 +272,8 @@ export const ECDSA_EIP_1654_EPHEMERAL_VALIDATOR: ValidatorType = async (
       authLink.payload
     )
 
-    if (expiration > Date.now()) {
+    const dateToValidateExpirationInMillis = options?.dateToValidateExpirationInMillis ? options?.dateToValidateExpirationInMillis : Date.now()
+    if (expiration > dateToValidateExpirationInMillis) {
       const result = await signatureValidator.methods
         .isValidSignature(
           Authenticator.createEIP1271MessageHash(message),

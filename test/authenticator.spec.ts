@@ -11,6 +11,7 @@ import {
   ECDSA_PERSONAL_EPHEMERAL_VALIDATOR
 } from '../src/Authenticator'
 import { AuthLinkType, AuthChain } from '../src/types'
+import { moveMinutes } from '../src/helper/utils'
 
 chai.use(chaiAsPromised)
 const expect = chai.expect
@@ -107,9 +108,7 @@ describe('Decentraland Crypto', function () {
       const res = await ECDSA_EIP_1654_EPHEMERAL_VALIDATOR(
         authority,
         authLink,
-        new HttpProvider(
-          'https://mainnet.infura.io/v3/640777fe168f4b0091c93726b4f0463a'
-        )
+        { provider: new HttpProvider('https://mainnet.infura.io/v3/640777fe168f4b0091c93726b4f0463a') }
       )
 
       // Restore
@@ -132,9 +131,7 @@ describe('Decentraland Crypto', function () {
       const res = await ECDSA_EIP_1654_EPHEMERAL_VALIDATOR(
         authority,
         authLink,
-        new HttpProvider(
-          'https://mainnet.infura.io/v3/640777fe168f4b0091c93726b4f0463a'
-        )
+        { provider: new HttpProvider('https://mainnet.infura.io/v3/640777fe168f4b0091c93726b4f0463a') }
       )
 
       // Restore
@@ -193,12 +190,42 @@ describe('Decentraland Crypto', function () {
       const res = await ECDSA_PERSONAL_EPHEMERAL_VALIDATOR(
         authority,
         authLink,
-        new HttpProvider(
-          'https://mainnet.infura.io/v3/640777fe168f4b0091c93726b4f0463a'
-        )
+        { provider: new HttpProvider('https://mainnet.infura.io/v3/640777fe168f4b0091c93726b4f0463a') }
       )
 
       expect(res.error).to.be.equal(true)
+    })
+
+    it('expiration check can be configured', async function () {
+      const identity = EthCrypto.createIdentity()
+      const ephemeral = EthCrypto.createIdentity()
+      const chain = Authenticator.createAuthChain(
+        identity,
+        ephemeral,
+        -5,
+        'message'
+      )
+
+      // Since the ephemeral expired 5 minutes ago, validation should fail
+      let isValid = await Authenticator.validateSignature(
+        'message',
+        chain,
+        new HttpProvider(
+          'https://mainnet.infura.io/v3/640777fe168f4b0091c93726b4f0463a'
+        ),
+      )
+      expect(isValid).to.be.equal(false)
+
+      // Since we are checking the ephemeral against 10 minutes ago, validation should pass
+      isValid = await Authenticator.validateSignature(
+        'message',
+        chain,
+        new HttpProvider(
+          'https://mainnet.infura.io/v3/640777fe168f4b0091c93726b4f0463a'
+        ),
+        moveMinutes(-10).getTime()
+      )
+      expect(isValid).to.be.equal(true)
     })
   })
 })
