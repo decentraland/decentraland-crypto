@@ -79,10 +79,16 @@ export class Authenticator {
     ownerIdentity: IdentityType,
     ephemeralIdentity: IdentityType,
     ephemeralMinutesDuration: number,
-    entityId: string
+    entityId: string,
+    ephemeralExpirationInMillis?: number
   ): AuthChain {
-    let expiration = new Date()
-    expiration.setMinutes(expiration.getMinutes() + ephemeralMinutesDuration)
+    let expiration
+    if (ephemeralExpirationInMillis === undefined) {
+      expiration = new Date()
+      expiration.setMinutes(expiration.getMinutes() + ephemeralMinutesDuration)
+    } else {
+      expiration = new Date(ephemeralExpirationInMillis)
+    }
 
     const ephemeralMessage = Authenticator.getEphemeralMessage(
       ephemeralIdentity.address,
@@ -123,9 +129,15 @@ export class Authenticator {
     ephemeralIdentity: IdentityType,
     ephemeralMinutesDuration: number,
     signer: (message: string) => Promise<string>
+    ephemeralExpirationInMillis?: number
   ): Promise<AuthIdentity> {
-    let expiration = new Date()
-    expiration.setMinutes(expiration.getMinutes() + ephemeralMinutesDuration)
+    let expiration
+    if (ephemeralExpirationInMillis === undefined) {
+      expiration = new Date()
+      expiration.setMinutes(expiration.getMinutes() + ephemeralMinutesDuration)
+    } else {
+      expiration = new Date(ephemeralExpirationInMillis)
+    }
 
     const ephemeralMessage = Authenticator.getEphemeralMessage(
       ephemeralIdentity.address,
