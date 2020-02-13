@@ -11,7 +11,7 @@ import {
   ECDSA_PERSONAL_EPHEMERAL_VALIDATOR
 } from '../src/Authenticator'
 import { AuthLinkType, AuthChain } from '../src/types'
-import { moveMinutes } from 'src/helper/utils'
+import { moveMinutes } from '../src/helper/utils'
 
 chai.use(chaiAsPromised)
 const expect = chai.expect
