@@ -128,7 +128,7 @@ export class Authenticator {
     ethAddress: EthAddress,
     ephemeralIdentity: IdentityType,
     ephemeralMinutesDuration: number,
-    signer: (message: string) => Promise<string>
+    signer: (message: string) => Promise<string>,
     ephemeralExpirationInMillis?: number
   ): Promise<AuthIdentity> {
     let expiration
