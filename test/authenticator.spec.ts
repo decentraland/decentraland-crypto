@@ -87,9 +87,10 @@ describe('Decentraland Crypto', function () {
         )
       )
 
-      expect(isValid).to.be.equal(true)
       // Restore
       clock.restore()
+
+      expect(isValid).to.be.equal(true)
     })
 
     it('should validate a signature :: EIP 1654', async function () {
@@ -111,9 +112,73 @@ describe('Decentraland Crypto', function () {
         )
       )
 
-      expect(res.nextAuthority).to.be.equal(ephemeral)
       // Restore
       clock.restore()
+
+      expect(res.nextAuthority).to.be.equal(ephemeral)
+    })
+
+    it('should support /r :: EIP 1654', async function () {
+      // Date.now() should return 0 to avoid expiration
+      const clock = sinon.useFakeTimers(0)
+      const ephemeral = '0x1F19d3EC0BE294f913967364c1D5B416e6A74555'
+      const authority = '0x3B21028719a4ACa7EBee35B0157a6F1B0cF0d0c5'
+      const authLink = {
+        type: AuthLinkType.ECDSA_EIP_1654_EPHEMERAL,
+        payload: `Decentraland Login\r\nEphemeral address: ${ephemeral}\r\nExpiration: Tue Jan 21 2020 16:34:32 GMT+0000 (Coordinated Universal Time)`,
+        signature: CONTRACT_WALLET_SIGNATURE
+      }
+
+      const res = await ECDSA_EIP_1654_EPHEMERAL_VALIDATOR(
+        authority,
+        authLink,
+        new HttpProvider(
+          'https://mainnet.infura.io/v3/640777fe168f4b0091c93726b4f0463a'
+        )
+      )
+
+      // Restore
+      clock.restore()
+
+      expect(res.nextAuthority).to.be.equal(ephemeral)
+    })
+
+    it('should support /r :: personal sign', async function () {
+      // Date.now() should return 0 to avoid expiration
+      const clock = sinon.useFakeTimers(0)
+      const chain: AuthChain = [
+        {
+          type: AuthLinkType.SIGNER,
+          payload: '0xf053efea93c7aeb3251a3c5f422864dddab354a9',
+          signature: ''
+        },
+        {
+          type: AuthLinkType.ECDSA_PERSONAL_EPHEMERAL,
+          payload:
+            'Decentraland Login\r\nEphemeral address: 0xd59c1F11bF5BDd5ae7305FA36D66089343f1C8FC\r\nExpiration: 2020-03-15T00:45:29.278Z',
+          signature:
+            '0x0fc56c45d201d17339aa84b39469d08b01e71bf992b3b709ae6babca7ab51fa63ef05436551effdd65981cf62624876b3e7a745e01738b6e17c8b43890feaaa81c'
+        },
+        {
+          type: AuthLinkType.ECDSA_SIGNED_ENTITY,
+          payload: 'QmUe3LmUJ4NACAKJzwQhn5rZVpLLSyBLWBmTSzJYEesDNx',
+          signature:
+            '0xe752475faa184dada05f10fa56c28b4a2d0391b5b92efe6af5ff77ca331594eb0102b23d74816afbb8645eaeff71af20b9eb92c621da0ecc55109cedd720f65d1c'
+        }
+      ]
+
+      const isValid = await Authenticator.validateSignature(
+        'QmUe3LmUJ4NACAKJzwQhn5rZVpLLSyBLWBmTSzJYEesDNx',
+        chain,
+        new HttpProvider(
+          'https://mainnet.infura.io/v3/640777fe168f4b0091c93726b4f0463a'
+        )
+      )
+
+      // Restore
+      clock.restore()
+
+      expect(isValid).to.be.equal(true)
     })
 
     it('reverts if signature was expired', async function () {
@@ -121,7 +186,7 @@ describe('Decentraland Crypto', function () {
       const authLink = {
         type: AuthLinkType.ECDSA_PERSONAL_EPHEMERAL,
         payload:
-          'Decentraland Login\nEphemeral address: 0x1F19d3EC0BE294f913967364c1D5B416e6A74555\nExpiration: Tue Jan 21 2020 16:34:32 GMT+0000 (Coordinated Universal Time)',
+          'Decentraland Login\nEphemeral address: 0x1F19d3EC0BE294f913967364c1D5B416e6A74555\nExpiration: 2020-01-15T00:45:29.278Z',
         signature: PERSONAL_SIGNATURE
       }
 

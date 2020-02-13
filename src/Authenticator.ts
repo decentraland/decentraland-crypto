@@ -221,21 +221,14 @@ export const ECDSA_PERSONAL_EPHEMERAL_VALIDATOR: ValidatorType = async (
   authLink: AuthLink
 ) => {
   try {
-    // authLink payload structure: <human-readable message>\nEphemeral address: <ephemeral-eth-address>\nExpiration: <timestamp>
-    // authLink payload example  : Decentraland Login\nEphemeral address: 0x123456\nExpiration: 2020-01-20T22:57:11.334Z
-    const payloadParts: string[] = authLink.payload.split('\n')
-    const ephemeralAddress: string = payloadParts[1].substring(
-      'Ephemeral address: '.length
+    const { message, ephemeralAddress, expiration } = parseEmphemeralPayload(
+      authLink.payload
     )
-    const expirationString: string = payloadParts[2].substring(
-      'Expiration: '.length
-    )
-    const expiration = Date.parse(expirationString)
 
     if (expiration > Date.now()) {
       const signerAddress = recover(
         authLink.signature,
-        Authenticator.createEthereumMessageHash(authLink.payload)
+        Authenticator.createEthereumMessageHash(message)
       )
       if (authority.toLocaleLowerCase() === signerAddress.toLocaleLowerCase()) {
         return { nextAuthority: ephemeralAddress }
@@ -266,21 +259,14 @@ export const ECDSA_EIP_1654_EPHEMERAL_VALIDATOR: ValidatorType = async (
       Address.fromString(authority)
     )
 
-    // authLink payload structure: <human-readable message >\nEphemeral address: <ephemeral-eth - address >\nExpiration: <timestamp>
-    // authLink payload example: Decentraland Login\nEphemeral address: 0x123456\nExpiration: 2020 - 01 - 20T22: 57: 11.334Z
-    const payloadParts: string[] = authLink.payload.split('\n')
-    const ephemeralAddress: string = payloadParts[1].substring(
-      'Ephemeral address: '.length
+    const { message, ephemeralAddress, expiration } = parseEmphemeralPayload(
+      authLink.payload
     )
-    const expirationString: string = payloadParts[2].substring(
-      'Expiration: '.length
-    )
-    const expiration = Date.parse(expirationString)
 
     if (expiration > Date.now()) {
       const result = await signatureValidator.methods
         .isValidSignature(
-          Authenticator.createEIP1271MessageHash(authLink.payload),
+          Authenticator.createEIP1271MessageHash(message),
           authLink.signature
         )
         .call()
@@ -306,6 +292,23 @@ export function getEphemeralSignatureType(signature: string): AuthLinkType {
   } else {
     return AuthLinkType.ECDSA_PERSONAL_EPHEMERAL
   }
+}
+
+export function parseEmphemeralPayload(
+  payload: string
+): { message: string; ephemeralAddress: string; expiration: number } {
+  // authLink payload structure: <human-readable message >\nEphemeral address: <ephemeral-eth - address >\nExpiration: <timestamp>
+  // authLink payload example: Decentraland Login\nEphemeral address: 0x123456\nExpiration: 2020 - 01 - 20T22: 57: 11.334Z
+  const message = payload.replace(/\r/g, '')
+  const payloadParts: string[] = message.split('\n')
+  const ephemeralAddress: string = payloadParts[1].substring(
+    'Ephemeral address: '.length
+  )
+  const expirationString: string = payloadParts[2].substring(
+    'Expiration: '.length
+  )
+  const expiration = Date.parse(expirationString)
+  return { message, ephemeralAddress, expiration }
 }
 
 function getValidatorByType(type: AuthLinkType): ValidatorType {
