@@ -11,6 +11,7 @@ import {
   ECDSA_PERSONAL_EPHEMERAL_VALIDATOR
 } from '../src/Authenticator'
 import { AuthLinkType, AuthChain } from '../src/types'
+import { moveMinutes } from 'src/helper/utils'
 
 chai.use(chaiAsPromised)
 const expect = chai.expect
@@ -222,15 +223,9 @@ describe('Decentraland Crypto', function () {
         new HttpProvider(
           'https://mainnet.infura.io/v3/640777fe168f4b0091c93726b4f0463a'
         ),
-        moveMinutes(new Date(), -10)
+        moveMinutes(-10).getTime()
       )
       expect(isValid).to.be.equal(true)
     })
-
-      /** Take the given date, add or subtract minutes, and return it in millis */
-      function moveMinutes(date: Date, minutes: number) {
-        date.setMinutes(date.getMinutes() + minutes)
-        return date.getTime()
-      }
   })
 })

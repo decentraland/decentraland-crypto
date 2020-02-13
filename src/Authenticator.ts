@@ -14,6 +14,7 @@ import {
   AuthLink,
   Signature
 } from './types'
+import { moveMinutes } from './helper/utils'
 
 export class Authenticator {
   /** Validate that the signature belongs to the Ethereum address */
@@ -82,8 +83,7 @@ export class Authenticator {
     ephemeralMinutesDuration: number,
     entityId: string
   ): AuthChain {
-    let expiration = new Date()
-    expiration.setMinutes(expiration.getMinutes() + ephemeralMinutesDuration)
+    const expiration = moveMinutes(ephemeralMinutesDuration)
 
     const ephemeralMessage = Authenticator.getEphemeralMessage(
       ephemeralIdentity.address,
@@ -232,7 +232,7 @@ export const ECDSA_PERSONAL_EPHEMERAL_VALIDATOR: ValidatorType = async (
       authLink.payload
     )
 
-    const dateToValidateExpirationInMillis = options?.dateToValidateExpirationInMillis ?? Date.now()
+    const dateToValidateExpirationInMillis = options?.dateToValidateExpirationInMillis ?options?.dateToValidateExpirationInMillis : Date.now()
     if (expiration > dateToValidateExpirationInMillis) {
       const signerAddress = recover(
         authLink.signature,
@@ -257,11 +257,12 @@ export const ECDSA_EIP_1654_EPHEMERAL_VALIDATOR: ValidatorType = async (
   const ERC1271_MAGIC_VALUE = '0x1626ba7e'
 
   try {
-    if (!options?.provider) {
+    const provider = options!.provider
+    if (!provider) {
       throw new Error('Missing provider')
     }
 
-    const eth = new Eth(options.provider)
+    const eth = new Eth(provider)
     const signatureValidator = new SignatureValidator(
       eth,
       Address.fromString(authority)
@@ -271,7 +272,7 @@ export const ECDSA_EIP_1654_EPHEMERAL_VALIDATOR: ValidatorType = async (
       authLink.payload
     )
 
-    const dateToValidateExpirationInMillis = options?.dateToValidateExpirationInMillis ?? Date.now()
+    const dateToValidateExpirationInMillis = options?.dateToValidateExpirationInMillis ? options?.dateToValidateExpirationInMillis : Date.now()
     if (expiration > dateToValidateExpirationInMillis) {
       const result = await signatureValidator.methods
         .isValidSignature(
