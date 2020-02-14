@@ -178,6 +178,44 @@ describe('Decentraland Crypto', function () {
       expect(isValid).to.be.equal(true)
     })
 
+    it('supports signature with old versions', async function () {
+      // Date.now() should return 0 to avoid expiration
+      const clock = sinon.useFakeTimers(0)
+      const chain: AuthChain = [
+        {
+          type: AuthLinkType.SIGNER,
+          payload: '0xbcac4dafb7e215f2f6cb3312af6d5e4f9d9e7eda',
+          signature: ''
+        },
+        {
+          type: AuthLinkType.ECDSA_PERSONAL_EPHEMERAL,
+          payload:
+            'Decentraland Login\nEphemeral address: 0x08bdc29abFB11C6a1BB201b7EF3c41273aEA23EA\nExpiration: 2020-03-16T20:38:09.875Z',
+          signature:
+            '0x3a66ecdb318c1b6a72aaf991418804044ad30a2015d0846f52240e7bdb533853736e9308c619593a7ed20ecf9361b988fbf9e4957a12f062276eda2a37b7dfda01'
+        },
+        {
+          type: AuthLinkType.ECDSA_SIGNED_ENTITY,
+          payload: 'QmbGrShBQs4XiuoTNX6znAvXNdqtub8DtXyaxdSTZbHLCu',
+          signature:
+            '0x25ce09ec7f3e77040e886a2ad441467877a0c285b31bdde5c2f8517dc9b802454720b34c456eb592ebbcb14cc908d445b2e1bc1695469b2ba80a4882676f71921c'
+        }
+      ]
+
+      const isValid = await Authenticator.validateSignature(
+        'QmbGrShBQs4XiuoTNX6znAvXNdqtub8DtXyaxdSTZbHLCu',
+        chain,
+        new HttpProvider(
+          'https://mainnet.infura.io/v3/640777fe168f4b0091c93726b4f0463a'
+        )
+      )
+
+      // Restore
+      clock.restore()
+
+      expect(isValid).to.be.equal(true)
+    })
+
     it('reverts if signature was expired', async function () {
       const authority = '0x1f19d3ec0be294f913967364c1d5b416e6a74555'
       const authLink = {
@@ -212,7 +250,7 @@ describe('Decentraland Crypto', function () {
         chain,
         new HttpProvider(
           'https://mainnet.infura.io/v3/640777fe168f4b0091c93726b4f0463a'
-        ),
+        )
       )
       expect(isValid).to.be.equal(false)
 
