@@ -55,3 +55,8 @@ export type AuthIdentity = {
   expiration: Date
   authChain: AuthChain
 }
+
+export type ValidationResult = {
+  ok: boolean
+  message?: string
+}
