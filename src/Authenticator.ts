@@ -12,7 +12,8 @@ import {
   IdentityType,
   AuditInfo,
   AuthLink,
-  Signature
+  Signature,
+  ValidationResult
 } from './types'
 import { moveMinutes } from './helper/utils'
 
@@ -25,23 +26,33 @@ export class Authenticator {
     authChain: AuthChain,
     provider: EthereumProvider,
     dateToValidateExpirationInMillis: number = Date.now()
-  ): Promise<string> {
+  ): Promise<ValidationResult> {
     let currentAuthority: string = ''
 
     for (let authLink of authChain) {
       const validator: ValidatorType = getValidatorByType(authLink.type)
-      const { error, nextAuthority } = await validator(
-        currentAuthority,
-        authLink,
-        { provider, dateToValidateExpirationInMillis }
-      )
-      if (error) {
-        return `ERROR. Link type: ${authLink.type}. ${error}.`
+      try {
+        const { nextAuthority } = await validator(currentAuthority, authLink, {
+          provider,
+          dateToValidateExpirationInMillis
+        })
+        currentAuthority = nextAuthority ? nextAuthority : ''
+      } catch (e) {
+        return {
+          ok: false,
+          message: `ERROR. Link type: ${authLink.type}. ${e.message}.`
+        }
       }
-      currentAuthority = nextAuthority ? nextAuthority : ''
     }
 
-    return currentAuthority === expectedFinalAuthority ? VALID_SIGNATURE : `ERROR: Invalid final authority. Expected: ${expectedFinalAuthority}. Current ${currentAuthority}.`
+    const ok = currentAuthority === expectedFinalAuthority
+
+    return {
+      ok,
+      message: ok
+        ? undefined
+        : `ERROR: Invalid final authority. Expected: ${expectedFinalAuthority}. Current ${currentAuthority}.`
+    }
   }
 
   static createEthereumMessageHash(msg: string) {
@@ -210,27 +221,20 @@ export const ECDSA_SIGNED_ENTITY_VALIDATOR: ValidatorType = async (
   authority: string,
   authLink: AuthLink
 ) => {
-  try {
-    const signerAddress = recover(
-      sanitizeSignature(authLink.signature),
-      Authenticator.createEthereumMessageHash(authLink.payload)
-    )
-    const expectedSignedAddress = authority.toLocaleLowerCase()
-    const actualSignedAddress = signerAddress.toLocaleLowerCase()
-    if (expectedSignedAddress === actualSignedAddress) {
-      return { nextAuthority: authLink.payload }
-    }
-    return asError(`Invalid signer address. Expected: ${expectedSignedAddress}. Actual: ${actualSignedAddress}`)
-  } catch (e) {
-    return asError(e)
-  }
-}
+  const signerAddress = recover(
+    sanitizeSignature(authLink.signature),
+    Authenticator.createEthereumMessageHash(authLink.payload)
+  )
+  const expectedSignedAddress = authority.toLocaleLowerCase()
+  const actualSignedAddress = signerAddress.toLocaleLowerCase()
 
-function asError(e: any): {error: string} {
-  if (e instanceof Error) {
-    return { error: e.message }
+  if (expectedSignedAddress === actualSignedAddress) {
+    return { nextAuthority: authLink.payload }
   }
-  return { error: e }
+
+  throw new Error(
+    `Invalid signer address. Expected: ${expectedSignedAddress}. Actual: ${actualSignedAddress}`
+  )
 }
 
 export const ECDSA_PERSONAL_EPHEMERAL_VALIDATOR: ValidatorType = async (
@@ -238,32 +242,35 @@ export const ECDSA_PERSONAL_EPHEMERAL_VALIDATOR: ValidatorType = async (
   authLink: AuthLink,
   options?: ValidationOptions
 ) => {
-  try {
-    const { message, ephemeralAddress, expiration } = parseEmphemeralPayload(
-      authLink.payload
-    )
+  const { message, ephemeralAddress, expiration } = parseEmphemeralPayload(
+    authLink.payload
+  )
 
-    const dateToValidateExpirationInMillis = options?.dateToValidateExpirationInMillis
-      ? options?.dateToValidateExpirationInMillis
-      : Date.now()
-    if (expiration > dateToValidateExpirationInMillis) {
-      const signerAddress = recover(
-        sanitizeSignature(authLink.signature),
-        Authenticator.createEthereumMessageHash(message)
-      )
-      const expectedSignedAddress = authority.toLocaleLowerCase()
-      const actualSignedAddress = signerAddress.toLocaleLowerCase()
-      if (expectedSignedAddress === actualSignedAddress) {
-        return { nextAuthority: ephemeralAddress }
-      } else {
-        return asError(`Invalid signer address. Expected: ${expectedSignedAddress}. Actual: ${actualSignedAddress}`)
-      }
-    } else {
-        return asError(`Ephemeral key expired. Expiration: ${expiration}. Test: ${dateToValidateExpirationInMillis}`)
+  const dateToValidateExpirationInMillis = options!
+    .dateToValidateExpirationInMillis
+    ? options!.dateToValidateExpirationInMillis
+    : Date.now()
+
+  if (expiration > dateToValidateExpirationInMillis) {
+    const signerAddress = recover(
+      sanitizeSignature(authLink.signature),
+      Authenticator.createEthereumMessageHash(message)
+    )
+    const expectedSignedAddress = authority.toLocaleLowerCase()
+    const actualSignedAddress = signerAddress.toLocaleLowerCase()
+
+    if (expectedSignedAddress === actualSignedAddress) {
+      return { nextAuthority: ephemeralAddress }
     }
-  } catch (e) {
-    return asError(e)
+
+    throw new Error(
+      `Invalid signer address. Expected: ${expectedSignedAddress}. Actual: ${actualSignedAddress}`
+    )
   }
+
+  throw new Error(
+    `Ephemeral key expired. Expiration: ${expiration}. Test: ${dateToValidateExpirationInMillis}`
+  )
 }
 
 export const ECDSA_EIP_1654_EPHEMERAL_VALIDATOR: ValidatorType = async (
@@ -274,44 +281,44 @@ export const ECDSA_EIP_1654_EPHEMERAL_VALIDATOR: ValidatorType = async (
   // bytes4(keccak256("isValidSignature(bytes32,bytes)")
   const ERC1271_MAGIC_VALUE = '0x1626ba7e'
 
-  try {
-    const provider = options!.provider
-    if (!provider) {
-      throw new Error('Missing provider')
-    }
-
-    const eth = new Eth(provider)
-    const signatureValidator = new SignatureValidator(
-      eth,
-      Address.fromString(authority)
-    )
-
-    const { message, ephemeralAddress, expiration } = parseEmphemeralPayload(
-      authLink.payload
-    )
-
-    const dateToValidateExpirationInMillis = options?.dateToValidateExpirationInMillis
-      ? options?.dateToValidateExpirationInMillis
-      : Date.now()
-    if (expiration > dateToValidateExpirationInMillis) {
-      const result = await signatureValidator.methods
-        .isValidSignature(
-          Authenticator.createEIP1271MessageHash(message),
-          authLink.signature
-        )
-        .call()
-
-      if (result === ERC1271_MAGIC_VALUE) {
-        return { nextAuthority: ephemeralAddress }
-      } else {
-        return asError(`Invalid validation. Expected: ${ERC1271_MAGIC_VALUE}. Actual: ${result}`)
-      }
-    } else {
-      return asError(`Ephemeral key expired. Expiration: ${expiration}. Test: ${dateToValidateExpirationInMillis}`)
-    }
-  } catch (e) {
-    return asError(e)
+  const provider = options!.provider
+  if (!provider) {
+    throw new Error('Missing provider')
   }
+
+  const eth = new Eth(provider)
+  const signatureValidator = new SignatureValidator(
+    eth,
+    Address.fromString(authority)
+  )
+
+  const { message, ephemeralAddress, expiration } = parseEmphemeralPayload(
+    authLink.payload
+  )
+
+  const dateToValidateExpirationInMillis = options?.dateToValidateExpirationInMillis
+    ? options?.dateToValidateExpirationInMillis
+    : Date.now()
+  if (expiration > dateToValidateExpirationInMillis) {
+    const result = await signatureValidator.methods
+      .isValidSignature(
+        Authenticator.createEIP1271MessageHash(message),
+        authLink.signature
+      )
+      .call()
+
+    if (result === ERC1271_MAGIC_VALUE) {
+      return { nextAuthority: ephemeralAddress }
+    }
+
+    throw new Error(
+      `Invalid validation. Expected: ${ERC1271_MAGIC_VALUE}.Actual: ${result}`
+    )
+  }
+
+  throw new Error(
+    `Ephemeral key expired. Expiration: ${expiration}. Test: ${dateToValidateExpirationInMillis}`
+  )
 }
 
 const ERROR_VALIDATOR: ValidatorType = async (_: string, __: AuthLink) => {
@@ -340,7 +347,9 @@ export function parseEmphemeralPayload(
   const expirationString: string = payloadParts[2].substring(
     'Expiration: '.length
   )
+
   const expiration = Date.parse(expirationString)
+
   return { message, ephemeralAddress, expiration }
 }
 

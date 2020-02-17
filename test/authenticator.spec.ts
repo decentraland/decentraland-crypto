@@ -8,8 +8,7 @@ import {
   Authenticator,
   getEphemeralSignatureType,
   ECDSA_EIP_1654_EPHEMERAL_VALIDATOR,
-  ECDSA_PERSONAL_EPHEMERAL_VALIDATOR,
-  VALID_SIGNATURE
+  ECDSA_PERSONAL_EPHEMERAL_VALIDATOR
 } from '../src/Authenticator'
 import { AuthLinkType, AuthChain } from '../src/types'
 import { moveMinutes } from '../src/helper/utils'
@@ -47,7 +46,7 @@ describe('Decentraland Crypto', function () {
         5,
         'message'
       )
-      const isValid = await Authenticator.validateSignature(
+      const result = await Authenticator.validateSignature(
         'message',
         chain,
         new HttpProvider(
@@ -55,7 +54,7 @@ describe('Decentraland Crypto', function () {
         )
       )
 
-      expect(isValid).to.be.equal(VALID_SIGNATURE)
+      expect(result.ok).to.be.equal(true)
     })
 
     it('should validate requiest :: EIP 1654', async function () {
@@ -81,7 +80,7 @@ describe('Decentraland Crypto', function () {
         }
       ]
 
-      const isValid = await Authenticator.validateSignature(
+      const result = await Authenticator.validateSignature(
         'QmUsqJaHc5HQaBrojhBdjF4fr5MQc6CqhwZjqwhVRftNAo',
         chain,
         new HttpProvider(
@@ -92,7 +91,7 @@ describe('Decentraland Crypto', function () {
       // Restore
       clock.restore()
 
-      expect(isValid).to.be.equal(VALID_SIGNATURE)
+      expect(result.ok).to.be.equal(true)
     })
 
     it('should validate a signature :: EIP 1654', async function () {
@@ -106,16 +105,20 @@ describe('Decentraland Crypto', function () {
         signature: CONTRACT_WALLET_SIGNATURE
       }
 
-      const res = await ECDSA_EIP_1654_EPHEMERAL_VALIDATOR(
+      const result = await ECDSA_EIP_1654_EPHEMERAL_VALIDATOR(
         authority,
         authLink,
-        { provider: new HttpProvider('https://mainnet.infura.io/v3/640777fe168f4b0091c93726b4f0463a') }
+        {
+          provider: new HttpProvider(
+            'https://mainnet.infura.io/v3/640777fe168f4b0091c93726b4f0463a'
+          )
+        }
       )
 
       // Restore
       clock.restore()
 
-      expect(res.nextAuthority).to.be.equal(ephemeral)
+      expect(result.nextAuthority).to.be.equal(ephemeral)
     })
 
     it('should support /r :: EIP 1654', async function () {
@@ -129,16 +132,20 @@ describe('Decentraland Crypto', function () {
         signature: CONTRACT_WALLET_SIGNATURE
       }
 
-      const res = await ECDSA_EIP_1654_EPHEMERAL_VALIDATOR(
+      const result = await ECDSA_EIP_1654_EPHEMERAL_VALIDATOR(
         authority,
         authLink,
-        { provider: new HttpProvider('https://mainnet.infura.io/v3/640777fe168f4b0091c93726b4f0463a') }
+        {
+          provider: new HttpProvider(
+            'https://mainnet.infura.io/v3/640777fe168f4b0091c93726b4f0463a'
+          )
+        }
       )
 
       // Restore
       clock.restore()
 
-      expect(res.nextAuthority).to.be.equal(ephemeral)
+      expect(result.nextAuthority).to.be.equal(ephemeral)
     })
 
     it('should support /r :: personal sign', async function () {
@@ -165,7 +172,7 @@ describe('Decentraland Crypto', function () {
         }
       ]
 
-      const isValid = await Authenticator.validateSignature(
+      const result = await Authenticator.validateSignature(
         'QmUe3LmUJ4NACAKJzwQhn5rZVpLLSyBLWBmTSzJYEesDNx',
         chain,
         new HttpProvider(
@@ -176,7 +183,7 @@ describe('Decentraland Crypto', function () {
       // Restore
       clock.restore()
 
-      expect(isValid).to.be.equal(VALID_SIGNATURE)
+      expect(result.ok).to.be.equal(true)
     })
 
     it('supports signature with old versions', async function () {
@@ -203,7 +210,7 @@ describe('Decentraland Crypto', function () {
         }
       ]
 
-      const isValid = await Authenticator.validateSignature(
+      const result = await Authenticator.validateSignature(
         'QmbGrShBQs4XiuoTNX6znAvXNdqtub8DtXyaxdSTZbHLCu',
         chain,
         new HttpProvider(
@@ -214,7 +221,7 @@ describe('Decentraland Crypto', function () {
       // Restore
       clock.restore()
 
-      expect(isValid).to.be.equal(VALID_SIGNATURE)
+      expect(result.ok).to.be.equal(true)
     })
 
     it('reverts if signature was expired', async function () {
@@ -225,14 +232,17 @@ describe('Decentraland Crypto', function () {
           'Decentraland Login\nEphemeral address: 0x1F19d3EC0BE294f913967364c1D5B416e6A74555\nExpiration: 2020-01-15T00:45:29.278Z',
         signature: PERSONAL_SIGNATURE
       }
-
-      const res = await ECDSA_PERSONAL_EPHEMERAL_VALIDATOR(
-        authority,
-        authLink,
-        { provider: new HttpProvider('https://mainnet.infura.io/v3/640777fe168f4b0091c93726b4f0463a') }
-      )
-
-      expect(res.error).satisfies((message:string) => message.startsWith("Ephemeral key expired."))
+      try {
+        await ECDSA_PERSONAL_EPHEMERAL_VALIDATOR(authority, authLink, {
+          provider: new HttpProvider(
+            'https://mainnet.infura.io/v3/640777fe168f4b0091c93726b4f0463a'
+          )
+        })
+      } catch (e) {
+        expect(e.message).satisfies((message: string) =>
+          message.startsWith('Ephemeral key expired.')
+        )
+      }
     })
 
     it('expiration check can be configured', async function () {
@@ -253,7 +263,12 @@ describe('Decentraland Crypto', function () {
           'https://mainnet.infura.io/v3/640777fe168f4b0091c93726b4f0463a'
         )
       )
-      expect(result).satisfies((message: string) => message.startsWith("ERROR. Link type: ECDSA_EPHEMERAL. Ephemeral key expired."))
+
+      expect(result.message).satisfies((message: string) =>
+        message.startsWith(
+          'ERROR. Link type: ECDSA_EPHEMERAL. Ephemeral key expired.'
+        )
+      )
 
       // Since we are checking the ephemeral against 10 minutes ago, validation should pass
       result = await Authenticator.validateSignature(
@@ -264,7 +279,8 @@ describe('Decentraland Crypto', function () {
         ),
         moveMinutes(-10).getTime()
       )
-      expect(result).to.be.equal(VALID_SIGNATURE)
+
+      expect(result.ok).to.be.equal(true)
     })
   })
 })
