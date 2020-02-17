@@ -16,6 +16,8 @@ import {
 } from './types'
 import { moveMinutes } from './helper/utils'
 
+export const VALID_SIGNATURE: string = 'VALID_SIGNATURE'
+
 export class Authenticator {
   /** Validate that the signature belongs to the Ethereum address */
   static async validateSignature(
@@ -23,7 +25,7 @@ export class Authenticator {
     authChain: AuthChain,
     provider: EthereumProvider,
     dateToValidateExpirationInMillis: number = Date.now()
-  ): Promise<boolean> {
+  ): Promise<string> {
     let currentAuthority: string = ''
 
     for (let authLink of authChain) {
@@ -34,12 +36,12 @@ export class Authenticator {
         { provider, dateToValidateExpirationInMillis }
       )
       if (error) {
-        return false
+        return `ERROR. Link type: ${authLink.type}. ${error}.`
       }
       currentAuthority = nextAuthority ? nextAuthority : ''
     }
 
-    return currentAuthority === expectedFinalAuthority
+    return currentAuthority === expectedFinalAuthority ? VALID_SIGNATURE : `ERROR: Invalid final authority. Expected: ${expectedFinalAuthority}. Current ${currentAuthority}.`
   }
 
   static createEthereumMessageHash(msg: string) {
@@ -190,7 +192,7 @@ type ValidatorType = (
   authority: string,
   authLink: AuthLink,
   options?: ValidationOptions
-) => Promise<{ error?: boolean; nextAuthority?: string }>
+) => Promise<{ error?: string; nextAuthority?: string }>
 
 type ValidationOptions = {
   dateToValidateExpirationInMillis?: number
@@ -213,13 +215,22 @@ export const ECDSA_SIGNED_ENTITY_VALIDATOR: ValidatorType = async (
       sanitizeSignature(authLink.signature),
       Authenticator.createEthereumMessageHash(authLink.payload)
     )
-    if (authority.toLocaleLowerCase() === signerAddress.toLocaleLowerCase()) {
+    const expectedSignedAddress = authority.toLocaleLowerCase()
+    const actualSignedAddress = signerAddress.toLocaleLowerCase()
+    if (expectedSignedAddress === actualSignedAddress) {
       return { nextAuthority: authLink.payload }
     }
+    return asError(`Invalid signer address. Expected: ${expectedSignedAddress}. Actual: ${actualSignedAddress}`)
   } catch (e) {
-    // console.error(e)
+    return asError(e)
   }
-  return { error: true }
+}
+
+function asError(e: any): {error: string} {
+  if (e instanceof Error) {
+    return { error: e.message }
+  }
+  return { error: e }
 }
 
 export const ECDSA_PERSONAL_EPHEMERAL_VALIDATOR: ValidatorType = async (
@@ -240,14 +251,19 @@ export const ECDSA_PERSONAL_EPHEMERAL_VALIDATOR: ValidatorType = async (
         sanitizeSignature(authLink.signature),
         Authenticator.createEthereumMessageHash(message)
       )
-      if (authority.toLocaleLowerCase() === signerAddress.toLocaleLowerCase()) {
+      const expectedSignedAddress = authority.toLocaleLowerCase()
+      const actualSignedAddress = signerAddress.toLocaleLowerCase()
+      if (expectedSignedAddress === actualSignedAddress) {
         return { nextAuthority: ephemeralAddress }
+      } else {
+        return asError(`Invalid signer address. Expected: ${expectedSignedAddress}. Actual: ${actualSignedAddress}`)
       }
+    } else {
+        return asError(`Ephemeral key expired. Expiration: ${expiration}. Test: ${dateToValidateExpirationInMillis}`)
     }
   } catch (e) {
-    // console.error(e)
+    return asError(e)
   }
-  return { error: true }
 }
 
 export const ECDSA_EIP_1654_EPHEMERAL_VALIDATOR: ValidatorType = async (
@@ -287,16 +303,19 @@ export const ECDSA_EIP_1654_EPHEMERAL_VALIDATOR: ValidatorType = async (
 
       if (result === ERC1271_MAGIC_VALUE) {
         return { nextAuthority: ephemeralAddress }
+      } else {
+        return asError(`Invalid validation. Expected: ${ERC1271_MAGIC_VALUE}. Actual: ${result}`)
       }
+    } else {
+      return asError(`Ephemeral key expired. Expiration: ${expiration}. Test: ${dateToValidateExpirationInMillis}`)
     }
   } catch (e) {
-    // console.error(e)
+    return asError(e)
   }
-  return { error: true }
 }
 
 const ERROR_VALIDATOR: ValidatorType = async (_: string, __: AuthLink) => {
-  return { error: true }
+  return { error: 'Error Validator.' }
 }
 
 export function getEphemeralSignatureType(signature: string): AuthLinkType {

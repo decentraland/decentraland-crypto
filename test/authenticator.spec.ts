@@ -8,7 +8,8 @@ import {
   Authenticator,
   getEphemeralSignatureType,
   ECDSA_EIP_1654_EPHEMERAL_VALIDATOR,
-  ECDSA_PERSONAL_EPHEMERAL_VALIDATOR
+  ECDSA_PERSONAL_EPHEMERAL_VALIDATOR,
+  VALID_SIGNATURE
 } from '../src/Authenticator'
 import { AuthLinkType, AuthChain } from '../src/types'
 import { moveMinutes } from '../src/helper/utils'
@@ -54,7 +55,7 @@ describe('Decentraland Crypto', function () {
         )
       )
 
-      expect(isValid).to.be.equal(true)
+      expect(isValid).to.be.equal(VALID_SIGNATURE)
     })
 
     it('should validate requiest :: EIP 1654', async function () {
@@ -91,7 +92,7 @@ describe('Decentraland Crypto', function () {
       // Restore
       clock.restore()
 
-      expect(isValid).to.be.equal(true)
+      expect(isValid).to.be.equal(VALID_SIGNATURE)
     })
 
     it('should validate a signature :: EIP 1654', async function () {
@@ -175,7 +176,7 @@ describe('Decentraland Crypto', function () {
       // Restore
       clock.restore()
 
-      expect(isValid).to.be.equal(true)
+      expect(isValid).to.be.equal(VALID_SIGNATURE)
     })
 
     it('supports signature with old versions', async function () {
@@ -213,7 +214,7 @@ describe('Decentraland Crypto', function () {
       // Restore
       clock.restore()
 
-      expect(isValid).to.be.equal(true)
+      expect(isValid).to.be.equal(VALID_SIGNATURE)
     })
 
     it('reverts if signature was expired', async function () {
@@ -231,7 +232,7 @@ describe('Decentraland Crypto', function () {
         { provider: new HttpProvider('https://mainnet.infura.io/v3/640777fe168f4b0091c93726b4f0463a') }
       )
 
-      expect(res.error).to.be.equal(true)
+      expect(res.error).satisfies((message:string) => message.startsWith("Ephemeral key expired."))
     })
 
     it('expiration check can be configured', async function () {
@@ -245,17 +246,17 @@ describe('Decentraland Crypto', function () {
       )
 
       // Since the ephemeral expired 5 minutes ago, validation should fail
-      let isValid = await Authenticator.validateSignature(
+      let result = await Authenticator.validateSignature(
         'message',
         chain,
         new HttpProvider(
           'https://mainnet.infura.io/v3/640777fe168f4b0091c93726b4f0463a'
         )
       )
-      expect(isValid).to.be.equal(false)
+      expect(result).satisfies((message: string) => message.startsWith("ERROR. Link type: ECDSA_EPHEMERAL. Ephemeral key expired."))
 
       // Since we are checking the ephemeral against 10 minutes ago, validation should pass
-      isValid = await Authenticator.validateSignature(
+      result = await Authenticator.validateSignature(
         'message',
         chain,
         new HttpProvider(
@@ -263,7 +264,7 @@ describe('Decentraland Crypto', function () {
         ),
         moveMinutes(-10).getTime()
       )
-      expect(isValid).to.be.equal(true)
+      expect(result).to.be.equal(VALID_SIGNATURE)
     })
   })
 })
