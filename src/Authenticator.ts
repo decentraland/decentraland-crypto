@@ -16,6 +16,7 @@ import {
   ValidationResult
 } from './types'
 import { moveMinutes } from './helper/utils'
+import Blocks from './helper/blocks'
 
 export const VALID_SIGNATURE: string = 'VALID_SIGNATURE'
 
@@ -300,7 +301,7 @@ export const ECDSA_EIP_1654_EPHEMERAL_VALIDATOR: ValidatorType = async (
     ? options?.dateToValidateExpirationInMillis
     : Date.now()
   if (expiration > dateToValidateExpirationInMillis) {
-    const result = await signatureValidator.methods
+    let result = await signatureValidator.methods
       .isValidSignature(
         Authenticator.createEIP1271MessageHash(message),
         authLink.signature
@@ -309,6 +310,28 @@ export const ECDSA_EIP_1654_EPHEMERAL_VALIDATOR: ValidatorType = async (
 
     if (result === ERC1271_MAGIC_VALUE) {
       return { nextAuthority: ephemeralAddress }
+    } else {
+      // check based on the dateToValidateExpirationInMillis
+      const dater = new Blocks(provider)
+      try {
+        const { block } = await dater.getDate(
+          dateToValidateExpirationInMillis,
+          false
+        )
+
+        result = await signatureValidator.methods
+          .isValidSignature(
+            Authenticator.createEIP1271MessageHash(message),
+            authLink.signature
+          )
+          .call({}, block)
+      } catch (e) {
+        throw new Error(`Invalid validation. Error: ${e.message}`)
+      }
+
+      if (result === ERC1271_MAGIC_VALUE) {
+        return { nextAuthority: ephemeralAddress }
+      }
     }
 
     throw new Error(
