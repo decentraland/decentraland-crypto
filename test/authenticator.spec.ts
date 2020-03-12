@@ -57,7 +57,7 @@ describe('Decentraland Crypto', function () {
       expect(result.ok).to.be.equal(true)
     })
 
-    it('should validate requiest :: EIP 1654', async function () {
+    it('should validate request :: EIP 1654', async function () {
       const clock = sinon.useFakeTimers(0)
       const chain: AuthChain = [
         {
@@ -90,6 +90,40 @@ describe('Decentraland Crypto', function () {
 
       // Restore
       clock.restore()
+
+      expect(result.ok).to.be.equal(true)
+    })
+
+    it.skip('should validate request for an specific time :: EIP 1654', async function () {
+      const chain: AuthChain = [
+        {
+          type: AuthLinkType.SIGNER,
+          payload: '0x49D4480d1F82E642Fc5697A8ba42f1065cA0f31E',
+          signature: ''
+        },
+        {
+          type: AuthLinkType.ECDSA_EIP_1654_EPHEMERAL,
+          payload:
+            'Decentraland Login\nEphemeral address: 0x390Be489333A19608634B1fBd5434129786Ab1E1\nExpiration: 2020-02-21T11:37:38.686Z',
+          signature:
+            '0xbef29294f9e5ad138824d7dc78baf4c5ca2d15d5fe39ea8c80c29463d3a8dafc362a61f5cd34cbe7a2a68d1ca6062331b9b2ff01db31c1c95bdc42454ce7c6da1cdca27f6f34993fe3e31273dfcd4070c005a7448e8971c259441b206d6b0dab4f11c14a31de529fa59f2a326321f5100fbb0ace11250457e3f3f731367529204c1c'
+        },
+        {
+          type: AuthLinkType.ECDSA_SIGNED_ENTITY,
+          payload: 'QmXXYddXKWVGFMEgtGoPMCu6dbJ35TyYR4AkDHw9mUc1s1',
+          signature:
+            '0xd125495751f34c973b86a76ea243fba5aa91bd3eb9eb38a45112c83dd0a5efd633dade4a71a6a3a48dc20224684b86621f2ac0c3f1b803af2963bec5fa407f3b1b'
+        }
+      ]
+
+      const result = await Authenticator.validateSignature(
+        'QmXXYddXKWVGFMEgtGoPMCu6dbJ35TyYR4AkDHw9mUc1s1',
+        chain,
+        new HttpProvider(
+          'https://mainnet.infura.io/v3/640777fe168f4b0091c93726b4f0463a'
+        ),
+        1581680328512 // time when deployed
+      )
 
       expect(result.ok).to.be.equal(true)
     })
