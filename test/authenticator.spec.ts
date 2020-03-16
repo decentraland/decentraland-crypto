@@ -94,7 +94,7 @@ describe('Decentraland Crypto', function () {
       expect(result.ok).to.be.equal(true)
     })
 
-    it.skip('should validate request for an specific time :: EIP 1654', async function () {
+    it('should validate request for an specific time :: EIP 1654', async function () {
       const chain: AuthChain = [
         {
           type: AuthLinkType.SIGNER,
@@ -120,7 +120,7 @@ describe('Decentraland Crypto', function () {
         'QmXXYddXKWVGFMEgtGoPMCu6dbJ35TyYR4AkDHw9mUc1s1',
         chain,
         new HttpProvider(
-          'https://mainnet.infura.io/v3/640777fe168f4b0091c93726b4f0463a'
+          'https://mainnet.infura.io/v3/2c902c2e3b8947d3b34bba7ca48635fc'
         ),
         1581680328512 // time when deployed
       )
