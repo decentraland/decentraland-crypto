@@ -389,7 +389,7 @@ async function isValidEIP1654Message(
   dateToValidateExpirationInMillis: number
 ) {
   // bytes4(keccak256("isValidSignature(bytes32,bytes)")
-  const ERC1271_MAGIC_VALUE = '0x1626ba7e'
+  const ERC1654_MAGIC_VALUE = '0x1626ba7e'
 
   if (!provider) {
     throw new Error('Missing provider')
@@ -407,7 +407,7 @@ async function isValidEIP1654Message(
     .isValidSignature(hashedMessage, signature)
     .call()
 
-  if (result === ERC1271_MAGIC_VALUE) {
+  if (result === ERC1654_MAGIC_VALUE) {
     return true
   } else {
     // check based on the dateToValidateExpirationInMillis
@@ -425,12 +425,12 @@ async function isValidEIP1654Message(
       throw new Error(`Invalid validation. Error: ${e.message}`)
     }
 
-    if (result === ERC1271_MAGIC_VALUE) {
+    if (result === ERC1654_MAGIC_VALUE) {
       return true
     }
 
     throw new Error(
-      `Invalid validation. Expected: ${ERC1271_MAGIC_VALUE}. Actual: ${result}`
+      `Invalid validation. Expected: ${ERC1654_MAGIC_VALUE}. Actual: ${result}`
     )
   }
 }
