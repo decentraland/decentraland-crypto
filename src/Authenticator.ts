@@ -20,6 +20,8 @@ import Blocks from './helper/blocks'
 
 export const VALID_SIGNATURE: string = 'VALID_SIGNATURE'
 
+const PERSONAL_SIGNATURE_LENGTH = 132
+
 export class Authenticator {
   /** Validate that the signature belongs to the Ethereum address */
   static async validateSignature(
@@ -84,7 +86,7 @@ export class Authenticator {
         signature: ''
       },
       {
-        type: AuthLinkType.ECDSA_SIGNED_ENTITY,
+        type: getSignedIdentitySignatureType(signature),
         payload: finalPayload,
         signature: signature
       }
@@ -124,7 +126,7 @@ export class Authenticator {
         signature: firstSignature
       },
       {
-        type: AuthLinkType.ECDSA_SIGNED_ENTITY,
+        type: AuthLinkType.ECDSA_PERSONAL_SIGNED_ENTITY,
         payload: entityId,
         signature: secondSignature
       }
@@ -172,7 +174,7 @@ export class Authenticator {
     return [
       ...authIdentity.authChain,
       {
-        type: AuthLinkType.ECDSA_SIGNED_ENTITY,
+        type: AuthLinkType.ECDSA_PERSONAL_SIGNED_ENTITY,
         payload: entityId,
         signature: secondSignature
       }
@@ -207,7 +209,7 @@ type ValidatorType = (
 ) => Promise<{ error?: string; nextAuthority?: string }>
 
 type ValidationOptions = {
-  dateToValidateExpirationInMillis?: number
+  dateToValidateExpirationInMillis: number
   provider?: EthereumProvider
 }
 
@@ -279,20 +281,6 @@ export const ECDSA_EIP_1654_EPHEMERAL_VALIDATOR: ValidatorType = async (
   authLink: AuthLink,
   options?: ValidationOptions
 ) => {
-  // bytes4(keccak256("isValidSignature(bytes32,bytes)")
-  const ERC1271_MAGIC_VALUE = '0x1626ba7e'
-
-  const provider = options!.provider
-  if (!provider) {
-    throw new Error('Missing provider')
-  }
-
-  const eth = new Eth(provider)
-  const signatureValidator = new SignatureValidator(
-    eth,
-    Address.fromString(authority)
-  )
-
   const { message, ephemeralAddress, expiration } = parseEmphemeralPayload(
     authLink.payload
   )
@@ -301,42 +289,17 @@ export const ECDSA_EIP_1654_EPHEMERAL_VALIDATOR: ValidatorType = async (
     ? options?.dateToValidateExpirationInMillis
     : Date.now()
   if (expiration > dateToValidateExpirationInMillis) {
-    let result = await signatureValidator.methods
-      .isValidSignature(
-        Authenticator.createEIP1271MessageHash(message),
-        authLink.signature
+    if (
+      await isValidEIP1654Message(
+        options!.provider,
+        authority,
+        message,
+        authLink.signature,
+        dateToValidateExpirationInMillis
       )
-      .call()
-
-    if (result === ERC1271_MAGIC_VALUE) {
+    ) {
       return { nextAuthority: ephemeralAddress }
-    } else {
-      // check based on the dateToValidateExpirationInMillis
-      const dater = new Blocks(provider)
-      try {
-        const { block } = await dater.getDate(
-          dateToValidateExpirationInMillis,
-          false
-        )
-
-        result = await signatureValidator.methods
-          .isValidSignature(
-            Authenticator.createEIP1271MessageHash(message),
-            authLink.signature
-          )
-          .call({}, block)
-      } catch (e) {
-        throw new Error(`Invalid validation. Error: ${e.message}`)
-      }
-
-      if (result === ERC1271_MAGIC_VALUE) {
-        return { nextAuthority: ephemeralAddress }
-      }
     }
-
-    throw new Error(
-      `Invalid validation. Expected: ${ERC1271_MAGIC_VALUE}.Actual: ${result}`
-    )
   }
 
   throw new Error(
@@ -344,16 +307,45 @@ export const ECDSA_EIP_1654_EPHEMERAL_VALIDATOR: ValidatorType = async (
   )
 }
 
+export const EIP_1654_SIGNED_ENTITY_VALIDATOR: ValidatorType = async (
+  authority: string,
+  authLink: AuthLink,
+  options?: ValidationOptions
+) => {
+  if (
+    await isValidEIP1654Message(
+      options!.provider,
+      authority,
+      authLink.payload,
+      authLink.signature,
+      options!.dateToValidateExpirationInMillis
+    )
+  ) {
+    return { nextAuthority: authLink.payload }
+  }
+
+  throw new Error(`Invalid validation`)
+}
+
 const ERROR_VALIDATOR: ValidatorType = async (_: string, __: AuthLink) => {
   return { error: 'Error Validator.' }
 }
 
 export function getEphemeralSignatureType(signature: string): AuthLinkType {
-  // ERC 1654 support https://github.com/ethereum/EIPs/issues/1654
-  if (signature.length > 150) {
-    return AuthLinkType.ECDSA_EIP_1654_EPHEMERAL
-  } else {
+  if (signature.length === PERSONAL_SIGNATURE_LENGTH) {
     return AuthLinkType.ECDSA_PERSONAL_EPHEMERAL
+  } else {
+    return AuthLinkType.ECDSA_EIP_1654_EPHEMERAL
+  }
+}
+
+export function getSignedIdentitySignatureType(
+  signature: string
+): AuthLinkType {
+  if (signature.length === PERSONAL_SIGNATURE_LENGTH) {
+    return AuthLinkType.ECDSA_PERSONAL_SIGNED_ENTITY
+  } else {
+    return AuthLinkType.ECDSA_EIP_1654_SIGNED_ENTITY
   }
 }
 
@@ -389,16 +381,72 @@ function sanitizeSignature(signature: string): string {
   return sanitizedSignature
 }
 
+async function isValidEIP1654Message(
+  provider: EthereumProvider | undefined,
+  contractAddress: string,
+  message: string,
+  signature: string,
+  dateToValidateExpirationInMillis: number
+) {
+  // bytes4(keccak256("isValidSignature(bytes32,bytes)")
+  const ERC1271_MAGIC_VALUE = '0x1626ba7e'
+
+  if (!provider) {
+    throw new Error('Missing provider')
+  }
+
+  const eth = new Eth(provider)
+  const signatureValidator = new SignatureValidator(
+    eth,
+    Address.fromString(contractAddress)
+  )
+
+  const hashedMessage = Authenticator.createEIP1271MessageHash(message)
+
+  let result = await signatureValidator.methods
+    .isValidSignature(hashedMessage, signature)
+    .call()
+
+  if (result === ERC1271_MAGIC_VALUE) {
+    return true
+  } else {
+    // check based on the dateToValidateExpirationInMillis
+    const dater = new Blocks(provider)
+    try {
+      const { block } = await dater.getDate(
+        dateToValidateExpirationInMillis,
+        false
+      )
+
+      result = await signatureValidator.methods
+        .isValidSignature(hashedMessage, signature)
+        .call({}, block)
+    } catch (e) {
+      throw new Error(`Invalid validation. Error: ${e.message}`)
+    }
+
+    if (result === ERC1271_MAGIC_VALUE) {
+      return true
+    }
+
+    throw new Error(
+      `Invalid validation. Expected: ${ERC1271_MAGIC_VALUE}. Actual: ${result}`
+    )
+  }
+}
+
 function getValidatorByType(type: AuthLinkType): ValidatorType {
   switch (type) {
     case AuthLinkType.SIGNER:
       return SIGNER_VALIDATOR
     case AuthLinkType.ECDSA_PERSONAL_EPHEMERAL:
       return ECDSA_PERSONAL_EPHEMERAL_VALIDATOR
-    case AuthLinkType.ECDSA_SIGNED_ENTITY:
+    case AuthLinkType.ECDSA_PERSONAL_SIGNED_ENTITY:
       return ECDSA_SIGNED_ENTITY_VALIDATOR
     case AuthLinkType.ECDSA_EIP_1654_EPHEMERAL:
       return ECDSA_EIP_1654_EPHEMERAL_VALIDATOR
+    case AuthLinkType.ECDSA_EIP_1654_SIGNED_ENTITY:
+      return EIP_1654_SIGNED_ENTITY_VALIDATOR
     default:
       return ERROR_VALIDATOR
   }
