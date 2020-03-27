@@ -10,7 +10,6 @@ import {
   EthAddress,
   AuthLinkType,
   IdentityType,
-  AuditInfo,
   AuthLink,
   Signature,
   ValidationResult
@@ -186,10 +185,10 @@ export class Authenticator {
     )
   }
 
-  static ownerAddress(auditInfo: AuditInfo): EthAddress {
-    if (auditInfo.authChain.length > 0) {
-      if (auditInfo.authChain[0].type === AuthLinkType.SIGNER) {
-        return auditInfo.authChain[0].payload
+  static ownerAddress(authChain: AuthChain): EthAddress {
+    if (authChain.length > 0) {
+      if (authChain[0].type === AuthLinkType.SIGNER) {
+        return authChain[0].payload
       }
     }
     return 'Invalid-Owner-Address'
