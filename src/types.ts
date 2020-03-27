@@ -23,33 +23,6 @@ export enum AuthLinkType {
   ECDSA_SIGNED_ENTITY = 'ECDSA_SIGNED_ENTITY'
 }
 
-export type AuditInfo = {
-  version: EntityVersion
-  deployedTimestamp: Timestamp
-
-  authChain: AuthChain
-
-  overwrittenBy?: EntityId
-
-  isBlacklisted?: boolean
-  blacklistedContent?: ContentFileHash[]
-
-  originalMetadata?: {
-    // This is used for migrations
-    originalVersion: EntityVersion
-    data: any
-  }
-}
-export enum EntityVersion {
-  V2 = 'v2',
-  V3 = 'v3'
-}
-
-export type Timestamp = number
-
-export type EntityId = ContentFileHash
-export type ContentFileHash = string
-
 export type AuthIdentity = {
   ephemeralIdentity: IdentityType
   expiration: Date
