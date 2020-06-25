@@ -31,6 +31,13 @@ export class Authenticator {
   ): Promise<ValidationResult> {
     let currentAuthority: string = ''
 
+    if (!Authenticator.isValidAuthChain(authChain)) {
+      return {
+        ok: false,
+        message: 'ERROR: Malformed authChain'
+      }
+    }
+
     for (let authLink of authChain) {
       const validator: ValidatorType = getValidatorByType(authLink.type)
       try {
@@ -55,6 +62,22 @@ export class Authenticator {
         ? undefined
         : `ERROR: Invalid final authority. Expected: ${expectedFinalAuthority}. Current ${currentAuthority}.`
     }
+  }
+
+  static isValidAuthChain(authChain: AuthChain): boolean {
+    let isValid = true
+
+    authChain.reduce((typesUsed, authLink) => {
+      if (typesUsed.has(authLink.type)) {
+        isValid = false
+      }
+
+      typesUsed.add(authLink.type)
+
+      return typesUsed
+    }, new Set<string>())
+
+    return isValid
   }
 
   static createEthereumMessageHash(msg: string) {
