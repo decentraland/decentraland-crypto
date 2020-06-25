@@ -65,19 +65,19 @@ export class Authenticator {
   }
 
   static isValidAuthChain(authChain: AuthChain): boolean {
-    let isValid = true
-
-    authChain.reduce((typesUsed, authLink) => {
-      if (typesUsed.has(authLink.type)) {
-        isValid = false
+    for (const [index, authLink] of authChain.entries()) {
+      // SIGNER should be the first one
+      if (index === 0 && authLink.type !== AuthLinkType.SIGNER) {
+        return false
       }
 
-      typesUsed.add(authLink.type)
+      // SIGNER should be unique
+      if (authLink.type === AuthLinkType.SIGNER && index !== 0) {
+        return false
+      }
+    }
 
-      return typesUsed
-    }, new Set<string>())
-
-    return isValid
+    return true
   }
 
   static createEthereumMessageHash(msg: string) {
