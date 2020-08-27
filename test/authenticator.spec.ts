@@ -57,6 +57,77 @@ describe('Decentraland Crypto', function () {
       expect(result.ok).to.be.equal(true)
     })
 
+    it('should validate request :: issued personal sign', async function () {
+      const identity = EthCrypto.createIdentity()
+      const ephemeral = EthCrypto.createIdentity()
+      const chain = Authenticator.createAuthChain(
+        identity,
+        ephemeral,
+        5,
+        'message',
+        'https://play.decentraland.org'
+      )
+      const result = await Authenticator.validateSignature(
+        'message',
+        chain,
+        new HttpProvider(
+          'https://mainnet.infura.io/v3/640777fe168f4b0091c93726b4f0463a'
+        ),
+        {
+          issuer: 'https://play.decentraland.org'
+        }
+      )
+
+      expect(result.ok).to.be.equal(true)
+    })
+
+    it('should reject request :: unissued personal sign', async function () {
+      const identity = EthCrypto.createIdentity()
+      const ephemeral = EthCrypto.createIdentity()
+      const chain = Authenticator.createAuthChain(
+        identity,
+        ephemeral,
+        5,
+        'message'
+      )
+      const result = await Authenticator.validateSignature(
+        'message',
+        chain,
+        new HttpProvider(
+          'https://mainnet.infura.io/v3/640777fe168f4b0091c93726b4f0463a'
+        ),
+        {
+          issuer: 'https://play.decentraland.org'
+        }
+      )
+
+      expect(result.ok).to.be.equal(false)
+    })
+
+    it('should reject request :: different issued personal sign', async function () {
+      const identity = EthCrypto.createIdentity()
+      const ephemeral = EthCrypto.createIdentity()
+      const chain = Authenticator.createAuthChain(
+        identity,
+        ephemeral,
+        5,
+        'message',
+        'https://decentraland.org'
+      )
+      const result = await Authenticator.validateSignature(
+        'message',
+        chain,
+        new HttpProvider(
+          'https://mainnet.infura.io/v3/640777fe168f4b0091c93726b4f0463a'
+        ),
+        {
+          issuer: 'https://play.decentraland.org'
+        }
+      )
+
+      expect(result.ok).to.be.equal(false)
+    })
+
     it('should validate request :: EIP 1654', async function () {
       const clock = sinon.useFakeTimers(0)
       const chain: AuthChain = [
@@ -122,7 +193,9 @@ describe('Decentraland Crypto', function () {
         new HttpProvider(
           'https://mainnet.infura.io/v3/2c902c2e3b8947d3b34bba7ca48635fc'
         ),
-        1581680328512 // time when deployed
+        {
+          dateToValidateExpirationInMillis: 1581680328512
+        }
       )
 
       expect(result.ok).to.be.equal(true)
@@ -187,7 +260,9 @@ describe('Decentraland Crypto', function () {
         new HttpProvider(
           'https://mainnet.infura.io/v3/2c902c2e3b8947d3b34bba7ca48635fc'
         ),
-        1584541612291
+        {
+          dateToValidateExpirationInMillis: 1584541612291
+        } 
       )
 
       expect(result.ok).to.be.equal(true)
@@ -198,6 +273,9 @@ describe('Decentraland Crypto', function () {
       const clock = sinon.useFakeTimers(0)
       const ephemeral = '0x1F19d3EC0BE294f913967364c1D5B416e6A74555'
       const authority = '0x3B21028719a4ACa7EBee35B0157a6F1B0cF0d0c5'
+      const provider = new HttpProvider(
+        'https://mainnet.infura.io/v3/640777fe168f4b0091c93726b4f0463a'
+      )
       const authLink = {
         type: AuthLinkType.ECDSA_EIP_1654_EPHEMERAL,
         payload: `Decentraland Login\r\nEphemeral address: ${ephemeral}\r\nExpiration: Tue Jan 21 2020 16:34:32 GMT+0000 (Coordinated Universal Time)`,
@@ -208,9 +286,7 @@ describe('Decentraland Crypto', function () {
         authority,
         authLink,
         {
-          provider: new HttpProvider(
-            'https://mainnet.infura.io/v3/640777fe168f4b0091c93726b4f0463a'
-          ),
+          provider,
           dateToValidateExpirationInMillis: Date.now()
         }
       )
@@ -351,7 +427,9 @@ describe('Decentraland Crypto', function () {
         new HttpProvider(
           'https://mainnet.infura.io/v3/640777fe168f4b0091c93726b4f0463a'
         ),
-        moveMinutes(-10).getTime()
+        {
+          dateToValidateExpirationInMillis: moveMinutes(-10).getTime()
+        }
       )
 
       expect(result.ok).to.be.equal(true)

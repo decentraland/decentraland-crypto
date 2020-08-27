@@ -27,8 +27,9 @@ export class Authenticator {
     expectedFinalAuthority: string,
     authChain: AuthChain,
     provider: EthereumProvider,
-    dateToValidateExpirationInMillis: number = Date.now()
+    options: Partial<Omit<ValidationOptions, 'provider'>> = {}
   ): Promise<ValidationResult> {
+    
     let currentAuthority: string = ''
 
     if (!Authenticator.isValidAuthChain(authChain)) {
@@ -42,8 +43,9 @@ export class Authenticator {
       const validator: ValidatorType = getValidatorByType(authLink.type)
       try {
         const { nextAuthority } = await validator(currentAuthority, authLink, {
-          provider,
-          dateToValidateExpirationInMillis
+          dateToValidateExpirationInMillis: Date.now(),
+          ...options,
+          provider
         })
         currentAuthority = nextAuthority ? nextAuthority : ''
       } catch (e) {
@@ -119,13 +121,15 @@ export class Authenticator {
     ownerIdentity: IdentityType,
     ephemeralIdentity: IdentityType,
     ephemeralMinutesDuration: number,
-    entityId: string
+    entityId: string,
+    issuer?: string
   ): AuthChain {
     const expiration = moveMinutes(ephemeralMinutesDuration)
 
     const ephemeralMessage = Authenticator.getEphemeralMessage(
       ephemeralIdentity.address,
-      expiration
+      expiration,
+      issuer
     )
     const firstSignature = Authenticator.createSignature(
       ownerIdentity,
@@ -161,14 +165,16 @@ export class Authenticator {
     ethAddress: EthAddress,
     ephemeralIdentity: IdentityType,
     ephemeralMinutesDuration: number,
-    signer: (message: string) => Promise<string>
+    signer: (message: string) => Promise<string>,
+    issuer?: string
   ): Promise<AuthIdentity> {
     let expiration = new Date()
     expiration.setMinutes(expiration.getMinutes() + ephemeralMinutesDuration)
 
     const ephemeralMessage = Authenticator.getEphemeralMessage(
       ephemeralIdentity.address,
-      expiration
+      expiration,
+      issuer
     )
     const firstSignature = await signer(ephemeralMessage)
 
@@ -219,20 +225,31 @@ export class Authenticator {
     return 'Invalid-Owner-Address'
   }
 
-  static getEphemeralMessage(ephemeralAddress: string, expiration: Date) {
-    return `Decentraland Login\nEphemeral address: ${ephemeralAddress}\nExpiration: ${expiration.toISOString()}`
+  static getEphemeralMessage(ephemeralAddress: string, expiration: Date, issuer?: string) {
+    const message = [
+      `Decentraland Login`,
+      `Ephemeral address: ${ephemeralAddress}`,
+      `Expiration: ${expiration.toISOString()}`,
+    ]
+
+    if (issuer) {
+      message.push(`Issuer: ${issuer}`)
+    }
+
+    return message.join('\n') 
   }
 }
 
 type ValidatorType = (
   authority: string,
   authLink: AuthLink,
-  options?: ValidationOptions
+  options?: Partial<ValidationOptions>
 ) => Promise<{ error?: string; nextAuthority?: string }>
 
 type ValidationOptions = {
   dateToValidateExpirationInMillis: number
-  provider?: EthereumProvider
+  provider: EthereumProvider
+  issuer?: string,
 }
 
 export const SIGNER_VALIDATOR: ValidatorType = async (
@@ -265,14 +282,19 @@ export const ECDSA_SIGNED_ENTITY_VALIDATOR: ValidatorType = async (
 export const ECDSA_PERSONAL_EPHEMERAL_VALIDATOR: ValidatorType = async (
   authority: string,
   authLink: AuthLink,
-  options?: ValidationOptions
+  options: Partial<ValidationOptions> = {}
 ) => {
-  const { message, ephemeralAddress, expiration } = parseEmphemeralPayload(
+  const { message, ephemeralAddress, expiration, issuer } = parseEmphemeralPayload(
     authLink.payload
   )
 
-  const dateToValidateExpirationInMillis = options!
-    .dateToValidateExpirationInMillis
+  if (issuer !== options?.issuer) {
+    throw new Error(
+      `Invalid issuer. Expected: ${options?.issuer || 'None'}. Actual: ${issuer || 'None'}`
+    ) 
+  }
+
+  const dateToValidateExpirationInMillis = options.dateToValidateExpirationInMillis
     ? options!.dateToValidateExpirationInMillis
     : Date.now()
 
@@ -301,23 +323,29 @@ export const ECDSA_PERSONAL_EPHEMERAL_VALIDATOR: ValidatorType = async (
 export const ECDSA_EIP_1654_EPHEMERAL_VALIDATOR: ValidatorType = async (
   authority: string,
   authLink: AuthLink,
-  options?: ValidationOptions
+  options: Partial<ValidationOptions> = {}
 ) => {
-  const { message, ephemeralAddress, expiration } = parseEmphemeralPayload(
+  const { message, ephemeralAddress, expiration, issuer } = parseEmphemeralPayload(
     authLink.payload
   )
 
-  const dateToValidateExpirationInMillis = options?.dateToValidateExpirationInMillis
-    ? options?.dateToValidateExpirationInMillis
+  if (issuer !== options.issuer) {
+    throw new Error(
+      `Invalid issuer. Expected: ${options.issuer || 'None'}. Actual: ${issuer || 'None'}`
+    ) 
+  }
+
+  const dateToValidateExpirationInMillis = options.dateToValidateExpirationInMillis
+    ? options.dateToValidateExpirationInMillis
     : Date.now()
+
   if (expiration > dateToValidateExpirationInMillis) {
     if (
       await isValidEIP1654Message(
-        options!.provider,
         authority,
         message,
         authLink.signature,
-        dateToValidateExpirationInMillis
+        options
       )
     ) {
       return { nextAuthority: ephemeralAddress }
@@ -336,11 +364,10 @@ export const EIP_1654_SIGNED_ENTITY_VALIDATOR: ValidatorType = async (
 ) => {
   if (
     await isValidEIP1654Message(
-      options!.provider,
       authority,
       authLink.payload,
       authLink.signature,
-      options!.dateToValidateExpirationInMillis
+      options
     )
   ) {
     return { nextAuthority: authLink.payload }
@@ -373,7 +400,7 @@ export function getSignedIdentitySignatureType(
 
 export function parseEmphemeralPayload(
   payload: string
-): { message: string; ephemeralAddress: string; expiration: number } {
+): { message: string; ephemeralAddress: string; expiration: number, issuer?: string } {
   // authLink payload structure: <human-readable message >\nEphemeral address: <ephemeral-eth - address >\nExpiration: <timestamp>
   // authLink payload example: Decentraland Login\nEphemeral address: 0x123456\nExpiration: 2020 - 01 - 20T22: 57: 11.334Z
   const message = payload.replace(/\r/g, '')
@@ -384,10 +411,13 @@ export function parseEmphemeralPayload(
   const expirationString: string = payloadParts[2].substring(
     'Expiration: '.length
   )
+  const issuer = payloadParts[3]?.substring(
+    'Issuer: '.length
+  )
 
   const expiration = Date.parse(expirationString)
 
-  return { message, ephemeralAddress, expiration }
+  return { message, ephemeralAddress, expiration, issuer }
 }
 
 function sanitizeSignature(signature: string): string {
@@ -404,20 +434,19 @@ function sanitizeSignature(signature: string): string {
 }
 
 async function isValidEIP1654Message(
-  provider: EthereumProvider | undefined,
   contractAddress: string,
   message: string,
   signature: string,
-  dateToValidateExpirationInMillis: number
+  options: Partial<ValidationOptions> = {}
 ) {
   // bytes4(keccak256("isValidSignature(bytes32,bytes)")
   const ERC1654_MAGIC_VALUE = '0x1626ba7e'
 
-  if (!provider) {
+  if (!options.provider) {
     throw new Error('Missing provider')
   }
 
-  const eth = new Eth(provider)
+  const eth = new Eth(options.provider)
   const signatureValidator = new SignatureValidator(
     eth,
     Address.fromString(contractAddress)
@@ -433,10 +462,10 @@ async function isValidEIP1654Message(
     return true
   } else {
     // check based on the dateToValidateExpirationInMillis
-    const dater = new Blocks(provider)
+    const dater = new Blocks(options.provider)
     try {
       const { block } = await dater.getDate(
-        dateToValidateExpirationInMillis,
+        options.dateToValidateExpirationInMillis || Date.now(),
         false
       )
 
