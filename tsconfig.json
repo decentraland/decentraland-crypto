@@ -3,8 +3,10 @@
     "baseUrl": ".",
     "outDir": "dist",
     "module": "commonjs",
-    "target": "es2017",
-    "lib": ["es2017", "dom"],
+    "target": "es2020",
+    "lib": [
+      "es2020"
+    ],
     "sourceMap": true,
     "moduleResolution": "node",
     "forceConsistentCasingInFileNames": true,
@@ -15,18 +17,9 @@
     "suppressImplicitAnyIndexErrors": true,
     "noUnusedParameters": true,
     "noUnusedLocals": true,
-    "plugins": [{ "name": "tslint-language-service" }],
-    "declaration": true
+    "types": ["node"],
+    "declaration": true,
+    "esModuleInterop": true
   },
-  "exclude": [
-    "node_modules",
-    "build",
-    "scripts",
-    "acceptance-tests",
-    "webpack",
-    "jest",
-    "dist",
-    "src/contracts",
-    "src/setupTests.ts"
-  ]
+  "include": ["src"]
 }
