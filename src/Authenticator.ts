@@ -1,6 +1,6 @@
 import { keccak256 } from 'ethereum-cryptography/keccak'
 import { utf8ToBytes } from 'ethereum-cryptography/utils'
-import { hexToBytes } from 'eth-connect'
+import RequestManager, { bytesToHex, hexToBytes } from 'eth-connect'
 import { SignatureValidator } from './contracts/SignatureValidator'
 import {
   AuthIdentity,
@@ -402,49 +402,53 @@ async function isValidEIP1654Message(
   dateToValidateExpirationInMillis: number
 ) {
   // bytes4(keccak256("isValidSignature(bytes32,bytes)")
-  const ERC1654_MAGIC_VALUE = '0x1626ba7e'
+  const ERC1654_MAGIC_VALUE = '1626ba7e'
 
   if (!provider) {
     throw new Error('Missing provider')
   }
-
-  // const signatureValidator = new SignatureValidator(
-  //   eth,
-  //   Address.fromString(contractAddress)
-  // )
+  const requestManager = new RequestManager(provider)
+  const signatureValidator = await SignatureValidator(
+    requestManager,
+    contractAddress
+  )
 
   const hashedMessage = Authenticator.createEIP1271MessageHash(message)
+  const _signature = hexToBytes(signature)
+  let result = bytesToHex(
+    await signatureValidator.isValidSignature(hashedMessage, _signature)
+  )
 
-  // let result = await signatureValidator.methods
-  //   .isValidSignature(hashedMessage, signature)
-  //   .call()
+  if (result === ERC1654_MAGIC_VALUE) {
+    return true
+  } else {
+    // check based on the dateToValidateExpirationInMillis
+    const dater = new Blocks(requestManager)
+    try {
+      const { block } = await dater.getDate(
+        dateToValidateExpirationInMillis,
+        false
+      )
 
-  // if (result === ERC1654_MAGIC_VALUE) {
-  //   return true
-  // } else {
-  //   // check based on the dateToValidateExpirationInMillis
-  //   const dater = new Blocks(provider)
-  //   try {
-  //     const { block } = await dater.getDate(
-  //       dateToValidateExpirationInMillis,
-  //       false
-  //     )
+      result = bytesToHex(
+        await signatureValidator.isValidSignature(
+          hashedMessage,
+          _signature,
+          block
+        )
+      )
+    } catch (e) {
+      throw new Error(`Invalid validation. Error: ${e.message}`)
+    }
 
-  //     result = await signatureValidator.methods
-  //       .isValidSignature(hashedMessage, signature)
-  //       .call({}, block)
-  //   } catch (e) {
-  //     throw new Error(`Invalid validation. Error: ${e.message}`)
-  //   }
+    if (result === ERC1654_MAGIC_VALUE) {
+      return true
+    }
 
-  //   if (result === ERC1654_MAGIC_VALUE) {
-  //     return true
-  //   }
-
-  //   throw new Error(
-  //     `Invalid validation. Expected: ${ERC1654_MAGIC_VALUE}. Actual: ${result}`
-  //   )
-  // }
+    throw new Error(
+      `Invalid validation. Expected: ${ERC1654_MAGIC_VALUE}. Actual: ${result}`
+    )
+  }
   return false
 }
 

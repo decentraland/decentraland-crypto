@@ -3,6 +3,7 @@ import * as chaiAsPromised from 'chai-as-promised'
 import * as sinon from 'sinon'
 import * as EthCrypto from 'eth-crypto'
 import { HTTPProvider } from 'eth-connect'
+import 'isomorphic-fetch'
 
 import {
   Authenticator,
@@ -54,7 +55,7 @@ describe('Decentraland Crypto', function() {
         )
       )
 
-      expect(result).to.be.equal({ ok: true })
+      expect(result).to.deep.equal({ ok: true, message: undefined })
     })
 
     it('should validate request :: EIP 1654', async function() {
