@@ -13,9 +13,6 @@
     "noImplicitAny": false,
     "strictNullChecks": true,
     "suppressImplicitAnyIndexErrors": true,
-    "noUnusedParameters": true,
-    "noUnusedLocals": true,
-    "plugins": [{ "name": "tslint-language-service" }],
     "declaration": true
   },
   "exclude": [

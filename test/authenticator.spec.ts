@@ -2,7 +2,7 @@ import * as chai from 'chai'
 import * as chaiAsPromised from 'chai-as-promised'
 import * as sinon from 'sinon'
 import * as EthCrypto from 'eth-crypto'
-import { HttpProvider } from 'web3x/providers'
+import { HTTPProvider } from 'eth-connect'
 
 import {
   Authenticator,
@@ -21,11 +21,11 @@ const PERSONAL_SIGNATURE =
 const CONTRACT_WALLET_SIGNATURE =
   '0xea441043d745d130e8a2560d7c5e8a9e9d9dae8530015f3bd90eaea5040c81ca419a2a2f29c48439985a58fa7aa7b4bb06e4111a054bfa8095b65b2f3c1ecae41ccdb959d51dda310325d0294cf6a9f0691d08abfb9978d4f2e7e504042b663ef2123712bf864ef161cf579c4b3e3faf3767865a5bb4535d9fc2b9f6664e403d241b'
 
-describe('Decentraland Crypto', function () {
+describe('Decentraland Crypto', function() {
   this.timeout(999999)
 
-  describe('Get signature type', function () {
-    it('should return the correct signature type', function () {
+  describe('Get signature type', function() {
+    it('should return the correct signature type', function() {
       expect(getEphemeralSignatureType(PERSONAL_SIGNATURE)).to.be.equal(
         AuthLinkType.ECDSA_PERSONAL_EPHEMERAL
       )
@@ -36,8 +36,8 @@ describe('Decentraland Crypto', function () {
     })
   })
 
-  describe('Validate Signature', function () {
-    it('should validate request :: personal sign', async function () {
+  describe('Validate Signature', function() {
+    it('should validate request :: personal sign', async function() {
       const identity = EthCrypto.createIdentity()
       const ephemeral = EthCrypto.createIdentity()
       const chain = Authenticator.createAuthChain(
@@ -49,15 +49,15 @@ describe('Decentraland Crypto', function () {
       const result = await Authenticator.validateSignature(
         'message',
         chain,
-        new HttpProvider(
+        new HTTPProvider(
           'https://mainnet.infura.io/v3/640777fe168f4b0091c93726b4f0463a'
         )
       )
 
-      expect(result.ok).to.be.equal(true)
+      expect(result).to.be.equal({ ok: true })
     })
 
-    it('should validate request :: EIP 1654', async function () {
+    it('should validate request :: EIP 1654', async function() {
       const clock = sinon.useFakeTimers(0)
       const chain: AuthChain = [
         {
@@ -83,7 +83,7 @@ describe('Decentraland Crypto', function () {
       const result = await Authenticator.validateSignature(
         'QmUsqJaHc5HQaBrojhBdjF4fr5MQc6CqhwZjqwhVRftNAo',
         chain,
-        new HttpProvider(
+        new HTTPProvider(
           'https://mainnet.infura.io/v3/640777fe168f4b0091c93726b4f0463a'
         )
       )
@@ -94,7 +94,7 @@ describe('Decentraland Crypto', function () {
       expect(result.ok).to.be.equal(true)
     })
 
-    it('should validate request for an specific time :: EIP 1654', async function () {
+    it('should validate request for an specific time :: EIP 1654', async function() {
       const chain: AuthChain = [
         {
           type: AuthLinkType.SIGNER,
@@ -119,7 +119,7 @@ describe('Decentraland Crypto', function () {
       const result = await Authenticator.validateSignature(
         'QmXXYddXKWVGFMEgtGoPMCu6dbJ35TyYR4AkDHw9mUc1s1',
         chain,
-        new HttpProvider(
+        new HTTPProvider(
           'https://mainnet.infura.io/v3/2c902c2e3b8947d3b34bba7ca48635fc'
         ),
         1581680328512 // time when deployed
@@ -128,7 +128,7 @@ describe('Decentraland Crypto', function () {
       expect(result.ok).to.be.equal(true)
     })
 
-    it('should validate a signature :: EIP 1654', async function () {
+    it('should validate a signature :: EIP 1654', async function() {
       // Date.now() should return 0 to avoid expiration
       const clock = sinon.useFakeTimers(0)
       const ephemeral = '0x1F19d3EC0BE294f913967364c1D5B416e6A74555'
@@ -143,7 +143,7 @@ describe('Decentraland Crypto', function () {
         authority,
         authLink,
         {
-          provider: new HttpProvider(
+          provider: new HTTPProvider(
             'https://mainnet.infura.io/v3/640777fe168f4b0091c93726b4f0463a'
           ),
           dateToValidateExpirationInMillis: Date.now()
@@ -156,7 +156,7 @@ describe('Decentraland Crypto', function () {
       expect(result.nextAuthority).to.be.equal(ephemeral)
     })
 
-    it('should validate simple signatures :: personal sign', async function () {
+    it('should validate simple signatures :: personal sign', async function() {
       const chain = Authenticator.createSimpleAuthChain(
         'QmWyFNeHbxXaPtUnzKvDZPpKSa4d5anZEZEFJ8TC1WgcfU',
         '0xeC6E6c0841a2bA474E92Bf42BaF76bFe80e8657C',
@@ -166,7 +166,7 @@ describe('Decentraland Crypto', function () {
       const result = await Authenticator.validateSignature(
         'QmWyFNeHbxXaPtUnzKvDZPpKSa4d5anZEZEFJ8TC1WgcfU',
         chain,
-        new HttpProvider(
+        new HTTPProvider(
           'https://mainnet.infura.io/v3/2c902c2e3b8947d3b34bba7ca48635fc'
         )
       )
@@ -174,7 +174,7 @@ describe('Decentraland Crypto', function () {
       expect(result.ok).to.be.equal(true)
     })
 
-    it('should validate simple signatures :: EIP 1654', async function () {
+    it('should validate simple signatures :: EIP 1654', async function() {
       const chain = Authenticator.createSimpleAuthChain(
         'QmNUd7Cyoo9CREGsACkvBrQSb3KjhWX379FVsdjTCGsTAz',
         '0x6b7d7e82c984a0F4489c722fd11906F017f57704',
@@ -184,7 +184,7 @@ describe('Decentraland Crypto', function () {
       const result = await Authenticator.validateSignature(
         'QmNUd7Cyoo9CREGsACkvBrQSb3KjhWX379FVsdjTCGsTAz',
         chain,
-        new HttpProvider(
+        new HTTPProvider(
           'https://mainnet.infura.io/v3/2c902c2e3b8947d3b34bba7ca48635fc'
         ),
         1584541612291
@@ -193,7 +193,7 @@ describe('Decentraland Crypto', function () {
       expect(result.ok).to.be.equal(true)
     })
 
-    it('should support /r :: EIP 1654', async function () {
+    it('should support /r :: EIP 1654', async function() {
       // Date.now() should return 0 to avoid expiration
       const clock = sinon.useFakeTimers(0)
       const ephemeral = '0x1F19d3EC0BE294f913967364c1D5B416e6A74555'
@@ -208,7 +208,7 @@ describe('Decentraland Crypto', function () {
         authority,
         authLink,
         {
-          provider: new HttpProvider(
+          provider: new HTTPProvider(
             'https://mainnet.infura.io/v3/640777fe168f4b0091c93726b4f0463a'
           ),
           dateToValidateExpirationInMillis: Date.now()
@@ -221,7 +221,7 @@ describe('Decentraland Crypto', function () {
       expect(result.nextAuthority).to.be.equal(ephemeral)
     })
 
-    it('should support /r :: personal sign', async function () {
+    it('should support /r :: personal sign', async function() {
       // Date.now() should return 0 to avoid expiration
       const clock = sinon.useFakeTimers(0)
       const chain: AuthChain = [
@@ -248,7 +248,7 @@ describe('Decentraland Crypto', function () {
       const result = await Authenticator.validateSignature(
         'QmUe3LmUJ4NACAKJzwQhn5rZVpLLSyBLWBmTSzJYEesDNx',
         chain,
-        new HttpProvider(
+        new HTTPProvider(
           'https://mainnet.infura.io/v3/640777fe168f4b0091c93726b4f0463a'
         )
       )
@@ -259,7 +259,7 @@ describe('Decentraland Crypto', function () {
       expect(result.ok).to.be.equal(true)
     })
 
-    it('supports signature with old versions', async function () {
+    it('supports signature with old versions', async function() {
       // Date.now() should return 0 to avoid expiration
       const clock = sinon.useFakeTimers(0)
       const chain: AuthChain = [
@@ -286,7 +286,7 @@ describe('Decentraland Crypto', function () {
       const result = await Authenticator.validateSignature(
         'QmbGrShBQs4XiuoTNX6znAvXNdqtub8DtXyaxdSTZbHLCu',
         chain,
-        new HttpProvider(
+        new HTTPProvider(
           'https://mainnet.infura.io/v3/640777fe168f4b0091c93726b4f0463a'
         )
       )
@@ -297,7 +297,7 @@ describe('Decentraland Crypto', function () {
       expect(result.ok).to.be.equal(true)
     })
 
-    it('reverts if signature was expired', async function () {
+    it('reverts if signature was expired', async function() {
       const authority = '0x1f19d3ec0be294f913967364c1d5b416e6a74555'
       const authLink = {
         type: AuthLinkType.ECDSA_PERSONAL_EPHEMERAL,
@@ -307,7 +307,7 @@ describe('Decentraland Crypto', function () {
       }
       try {
         await ECDSA_PERSONAL_EPHEMERAL_VALIDATOR(authority, authLink, {
-          provider: new HttpProvider(
+          provider: new HTTPProvider(
             'https://mainnet.infura.io/v3/640777fe168f4b0091c93726b4f0463a'
           ),
           dateToValidateExpirationInMillis: Date.now()
@@ -319,7 +319,7 @@ describe('Decentraland Crypto', function () {
       }
     })
 
-    it('expiration check can be configured', async function () {
+    it('expiration check can be configured', async function() {
       const identity = EthCrypto.createIdentity()
       const ephemeral = EthCrypto.createIdentity()
       const chain = Authenticator.createAuthChain(
@@ -333,7 +333,7 @@ describe('Decentraland Crypto', function () {
       let result = await Authenticator.validateSignature(
         'message',
         chain,
-        new HttpProvider(
+        new HTTPProvider(
           'https://mainnet.infura.io/v3/640777fe168f4b0091c93726b4f0463a'
         )
       )
@@ -348,7 +348,7 @@ describe('Decentraland Crypto', function () {
       result = await Authenticator.validateSignature(
         'message',
         chain,
-        new HttpProvider(
+        new HTTPProvider(
           'https://mainnet.infura.io/v3/640777fe168f4b0091c93726b4f0463a'
         ),
         moveMinutes(-10).getTime()
@@ -357,9 +357,9 @@ describe('Decentraland Crypto', function () {
       expect(result.ok).to.be.equal(true)
     })
 
-    it('should validate authChain', async function () {
+    it('should validate authChain', async function() {
       const clock = sinon.useFakeTimers(0)
-      const provider = new HttpProvider(
+      const provider = new HTTPProvider(
         'https://mainnet.infura.io/v3/640777fe168f4b0091c93726b4f0463a'
       )
       let chain: AuthChain = [

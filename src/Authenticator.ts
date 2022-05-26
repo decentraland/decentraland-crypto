@@ -1,8 +1,6 @@
-import { hash, sign, recover } from 'eth-crypto'
-import { Eth } from 'web3x/eth'
-import { Address } from 'web3x/address'
-import { EthereumProvider } from 'web3x/providers'
-
+import { keccak256 } from 'ethereum-cryptography/keccak'
+import { utf8ToBytes } from 'ethereum-cryptography/utils'
+import { hexToBytes } from 'eth-connect'
 import { SignatureValidator } from './contracts/SignatureValidator'
 import {
   AuthIdentity,
@@ -16,6 +14,7 @@ import {
 } from './types'
 import { moveMinutes } from './helper/utils'
 import Blocks from './helper/blocks'
+import { computeAddress, recoverPublicKey, sign } from './crypto'
 
 export const VALID_SIGNATURE: string = 'VALID_SIGNATURE'
 
@@ -26,7 +25,7 @@ export class Authenticator {
   static async validateSignature(
     expectedFinalAuthority: string,
     authChain: AuthChain,
-    provider: EthereumProvider,
+    provider: any,
     dateToValidateExpirationInMillis: number = Date.now()
   ): Promise<ValidationResult> {
     let currentAuthority: string = ''
@@ -64,6 +63,7 @@ export class Authenticator {
     }
   }
 
+  // TODO: unit test
   static isValidAuthChain(authChain: AuthChain): boolean {
     for (const [index, authLink] of authChain.entries()) {
       // SIGNER should be the first one
@@ -80,20 +80,17 @@ export class Authenticator {
     return true
   }
 
+  // TODO: unit test
   static createEthereumMessageHash(msg: string) {
     let msgWithPrefix: string = `\x19Ethereum Signed Message:\n${msg.length}${msg}`
-    const msgHash = hash.keccak256(msgWithPrefix)
+    const msgHash = keccak256(utf8ToBytes(msgWithPrefix))
     return msgHash
   }
 
+  // TODO: unit test
   // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1271.md
   static createEIP1271MessageHash(msg: string) {
-    return hash.keccak256([
-      {
-        type: 'string',
-        value: msg
-      }
-    ])
+    return keccak256(utf8ToBytes(msg))
   }
 
   static createSimpleAuthChain(
@@ -203,13 +200,15 @@ export class Authenticator {
     ]
   }
 
+  // TODO: unit test
   static createSignature(identity: IdentityType, message: string) {
     return sign(
-      identity.privateKey,
+      hexToBytes(identity.privateKey),
       Authenticator.createEthereumMessageHash(message)
     )
   }
 
+  // TODO: unit test
   static ownerAddress(authChain: AuthChain): EthAddress {
     if (authChain.length > 0) {
       if (authChain[0].type === AuthLinkType.SIGNER) {
@@ -219,6 +218,7 @@ export class Authenticator {
     return 'Invalid-Owner-Address'
   }
 
+  // TODO: unit test
   static getEphemeralMessage(ephemeralAddress: string, expiration: Date) {
     return `Decentraland Login\nEphemeral address: ${ephemeralAddress}\nExpiration: ${expiration.toISOString()}`
   }
@@ -232,7 +232,7 @@ type ValidatorType = (
 
 type ValidationOptions = {
   dateToValidateExpirationInMillis: number
-  provider?: EthereumProvider
+  provider?: any
 }
 
 export const SIGNER_VALIDATOR: ValidatorType = async (
@@ -246,9 +246,11 @@ export const ECDSA_SIGNED_ENTITY_VALIDATOR: ValidatorType = async (
   authority: string,
   authLink: AuthLink
 ) => {
-  const signerAddress = recover(
-    sanitizeSignature(authLink.signature),
-    Authenticator.createEthereumMessageHash(authLink.payload)
+  const signerAddress = computeAddress(
+    recoverPublicKey(
+      hexToBytes(authLink.signature),
+      Authenticator.createEthereumMessageHash(authLink.payload)
+    )
   )
   const expectedSignedAddress = authority.toLocaleLowerCase()
   const actualSignedAddress = signerAddress.toLocaleLowerCase()
@@ -277,9 +279,11 @@ export const ECDSA_PERSONAL_EPHEMERAL_VALIDATOR: ValidatorType = async (
     : Date.now()
 
   if (expiration > dateToValidateExpirationInMillis) {
-    const signerAddress = recover(
-      sanitizeSignature(authLink.signature),
-      Authenticator.createEthereumMessageHash(message)
+    const signerAddress = computeAddress(
+      recoverPublicKey(
+        hexToBytes(authLink.signature),
+        Authenticator.createEthereumMessageHash(message)
+      )
     )
     const expectedSignedAddress = authority.toLocaleLowerCase()
     const actualSignedAddress = signerAddress.toLocaleLowerCase()
@@ -390,21 +394,8 @@ export function parseEmphemeralPayload(
   return { message, ephemeralAddress, expiration }
 }
 
-function sanitizeSignature(signature: string): string {
-  let sanitizedSignature = signature
-
-  const version = parseInt(signature.slice(-2), 16)
-
-  if (version === 0 || version === 1) {
-    sanitizedSignature =
-      signature.substr(0, signature.length - 2) + (version + 27).toString(16)
-  }
-
-  return sanitizedSignature
-}
-
 async function isValidEIP1654Message(
-  provider: EthereumProvider | undefined,
+  provider: any | undefined,
   contractAddress: string,
   message: string,
   signature: string,
@@ -417,44 +408,44 @@ async function isValidEIP1654Message(
     throw new Error('Missing provider')
   }
 
-  const eth = new Eth(provider)
-  const signatureValidator = new SignatureValidator(
-    eth,
-    Address.fromString(contractAddress)
-  )
+  // const signatureValidator = new SignatureValidator(
+  //   eth,
+  //   Address.fromString(contractAddress)
+  // )
 
   const hashedMessage = Authenticator.createEIP1271MessageHash(message)
 
-  let result = await signatureValidator.methods
-    .isValidSignature(hashedMessage, signature)
-    .call()
+  // let result = await signatureValidator.methods
+  //   .isValidSignature(hashedMessage, signature)
+  //   .call()
 
-  if (result === ERC1654_MAGIC_VALUE) {
-    return true
-  } else {
-    // check based on the dateToValidateExpirationInMillis
-    const dater = new Blocks(provider)
-    try {
-      const { block } = await dater.getDate(
-        dateToValidateExpirationInMillis,
-        false
-      )
+  // if (result === ERC1654_MAGIC_VALUE) {
+  //   return true
+  // } else {
+  //   // check based on the dateToValidateExpirationInMillis
+  //   const dater = new Blocks(provider)
+  //   try {
+  //     const { block } = await dater.getDate(
+  //       dateToValidateExpirationInMillis,
+  //       false
+  //     )
 
-      result = await signatureValidator.methods
-        .isValidSignature(hashedMessage, signature)
-        .call({}, block)
-    } catch (e) {
-      throw new Error(`Invalid validation. Error: ${e.message}`)
-    }
+  //     result = await signatureValidator.methods
+  //       .isValidSignature(hashedMessage, signature)
+  //       .call({}, block)
+  //   } catch (e) {
+  //     throw new Error(`Invalid validation. Error: ${e.message}`)
+  //   }
 
-    if (result === ERC1654_MAGIC_VALUE) {
-      return true
-    }
+  //   if (result === ERC1654_MAGIC_VALUE) {
+  //     return true
+  //   }
 
-    throw new Error(
-      `Invalid validation. Expected: ${ERC1654_MAGIC_VALUE}. Actual: ${result}`
-    )
-  }
+  //   throw new Error(
+  //     `Invalid validation. Expected: ${ERC1654_MAGIC_VALUE}. Actual: ${result}`
+  //   )
+  // }
+  return false
 }
 
 function getValidatorByType(type: AuthLinkType): ValidatorType {

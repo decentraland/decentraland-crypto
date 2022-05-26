@@ -41,8 +41,8 @@
   },
   "homepage": "https://github.com/decentraland/decentraland-crypto#readme",
   "dependencies": {
-    "eth-crypto": "^1.5.1",
-    "web3x": "^4.0.6"
+    "eth-connect": "^6.0.2",
+    "ethereum-cryptography": "^1.0.3"
   },
   "devDependencies": {
     "@types/chai": "^4.2.8",
@@ -51,6 +51,7 @@
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "dcl-tslint-config-standard": "^1.0.1",
+    "eth-crypto": "^2.3.0",
     "husky": "^1.0.1",
     "mocha": "^5.2.0",
     "nyc": "^14.1.1",
