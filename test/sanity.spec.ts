@@ -1,18 +1,11 @@
-import * as chai from 'chai'
-import * as chaiAsPromised from 'chai-as-promised'
-import * as sinon from 'sinon'
-import { HTTPProvider } from 'eth-connect'
+import { getAddress, HTTPProvider } from 'eth-connect'
 import { Authenticator } from '../src/Authenticator'
 import { AuthLinkType, AuthChain } from '../src/types'
-
-chai.use(chaiAsPromised)
-const expect = chai.expect
+import { recoverAddressFromEthSignature } from '../src/crypto'
 
 describe('Sanity', function() {
-  this.timeout(999999)
-
   it('Should work with production example', async function() {
-    const clock = sinon.useFakeTimers(0)
+    jest.useFakeTimers().setSystemTime(0)
     const chain: AuthChain = [
       {
         type: AuthLinkType.SIGNER,
@@ -43,8 +36,65 @@ describe('Sanity', function() {
     )
 
     // Restore
-    clock.restore()
+    jest.useRealTimers()
 
-    expect(result).to.deep.equal({ ok: true, message: undefined })
+    expect(result).toEqual({ ok: true, message: undefined })
+  })
+})
+
+describe('static-signatures', () => {
+  const ephemeralIdentity = {
+    privateKey:
+      '0x8d11d14dd05b58fa150ec39ceab942dbff334af4dd4e87df4244106023d758ce',
+    publicKey:
+      'a1a8de183be2f189bdfacf83ca4262016840c590abee0b2048288c3b9090dae87538eda022d7c6f82a5ed617b7138db1a63ebe92f7b1afc6de032d6568525f13',
+    address: '0x68560651BD91509EB22b90f6F748422A26CA3425'
+  }
+  const realAccount = {
+    privateKey:
+      '0x800cbd114eba965fcb41c252b920e916d2be8851496f21f24f1b4dcadf51688e',
+    publicKey:
+      'e9f386a334fb21ce11151a88b54f4aebaf0e7ab7b8ad7b3be9c503857b278c7a7f4ccb611c5edd046e07bf1d1969c966b28fa9bfb10bf7bfa239625968bcfc4f',
+    address: '0x13FE90239bfda363eC33a849b716616958c04f0F'
+  }
+
+  it('tests createSignature', () => {
+    const message = 'menduz'
+    const sig = Authenticator.createSignature(realAccount, message)
+    const addr = recoverAddressFromEthSignature(sig, message)
+    expect(addr).toEqual(realAccount.address)
+  })
+
+  it('createAuthChain with mock signature', async () => {
+    const chain = Authenticator.createAuthChain(
+      realAccount,
+      ephemeralIdentity,
+      10,
+      'test'
+    )
+    expect(chain.length).toEqual(3)
+
+    // validate first part
+    expect(chain[0].type).toEqual('SIGNER')
+    expect(chain[0].payload).toEqual(getAddress(realAccount.address))
+
+    // second part, signed with real account
+    {
+      expect(chain[1].type).toEqual('ECDSA_EPHEMERAL')
+      const recovered = recoverAddressFromEthSignature(
+        chain[1].signature,
+        chain[1].payload
+      )
+      expect(recovered).toEqual(getAddress(realAccount.address))
+    }
+    // third part, signed with ephemeral
+    {
+      expect(chain[2].type).toEqual('ECDSA_SIGNED_ENTITY')
+      const recovered = recoverAddressFromEthSignature(
+        chain[2].signature,
+        chain[2].payload
+      )
+      expect(recovered).toEqual(getAddress(ephemeralIdentity.address))
+    }
   })
 })

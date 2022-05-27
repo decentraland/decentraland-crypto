@@ -14,15 +14,22 @@ import {
 } from './types'
 import { moveMinutes } from './helper/utils'
 import Blocks from './helper/blocks'
-import { computeAddress, recoverPublicKey, sign } from './crypto'
+import {
+  computeAddress,
+  createEthereumMessageHash as utilsCreateEthereumMessage,
+  ethSign,
+  recoverAddressFromEthSignature,
+  recoverPublicKey,
+  sign
+} from './crypto'
 
 export const VALID_SIGNATURE: string = 'VALID_SIGNATURE'
 
 const PERSONAL_SIGNATURE_LENGTH = 132
 
-export class Authenticator {
+export namespace Authenticator {
   /** Validate that the signature belongs to the Ethereum address */
-  static async validateSignature(
+  export async function validateSignature(
     expectedFinalAuthority: string,
     authChain: AuthChain,
     provider: any,
@@ -64,7 +71,7 @@ export class Authenticator {
   }
 
   // TODO: unit test
-  static isValidAuthChain(authChain: AuthChain): boolean {
+  export function isValidAuthChain(authChain: AuthChain): boolean {
     for (const [index, authLink] of authChain.entries()) {
       // SIGNER should be the first one
       if (index === 0 && authLink.type !== AuthLinkType.SIGNER) {
@@ -81,19 +88,12 @@ export class Authenticator {
   }
 
   // TODO: unit test
-  static createEthereumMessageHash(msg: string) {
-    let msgWithPrefix: string = `\x19Ethereum Signed Message:\n${msg.length}${msg}`
-    const msgHash = keccak256(utf8ToBytes(msgWithPrefix))
-    return msgHash
-  }
-
-  // TODO: unit test
   // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1271.md
-  static createEIP1271MessageHash(msg: string) {
+  export function createEIP1271MessageHash(msg: string) {
     return keccak256(utf8ToBytes(msg))
   }
 
-  static createSimpleAuthChain(
+  export function createSimpleAuthChain(
     finalPayload: string,
     ownerAddress: EthAddress,
     signature: Signature
@@ -112,7 +112,7 @@ export class Authenticator {
     ]
   }
 
-  static createAuthChain(
+  export function createAuthChain(
     ownerIdentity: IdentityType,
     ephemeralIdentity: IdentityType,
     ephemeralMinutesDuration: number,
@@ -154,7 +154,7 @@ export class Authenticator {
     return authChain
   }
 
-  static async initializeAuthChain(
+  export async function initializeAuthChain(
     ethAddress: EthAddress,
     ephemeralIdentity: IdentityType,
     ephemeralMinutesDuration: number,
@@ -185,7 +185,7 @@ export class Authenticator {
     }
   }
 
-  static signPayload(authIdentity: AuthIdentity, entityId: string) {
+  export function signPayload(authIdentity: AuthIdentity, entityId: string) {
     const secondSignature = Authenticator.createSignature(
       authIdentity.ephemeralIdentity,
       entityId
@@ -200,16 +200,18 @@ export class Authenticator {
     ]
   }
 
+  export const createEthereumMessageHash = utilsCreateEthereumMessage
+
   // TODO: unit test
-  static createSignature(identity: IdentityType, message: string) {
-    return sign(
-      hexToBytes(identity.privateKey),
-      Authenticator.createEthereumMessageHash(message)
-    )
+  export function createSignature(
+    identity: IdentityType,
+    message: string | Uint8Array
+  ) {
+    return ethSign(hexToBytes(identity.privateKey), message)
   }
 
   // TODO: unit test
-  static ownerAddress(authChain: AuthChain): EthAddress {
+  export function ownerAddress(authChain: AuthChain): EthAddress {
     if (authChain.length > 0) {
       if (authChain[0].type === AuthLinkType.SIGNER) {
         return authChain[0].payload
@@ -219,7 +221,10 @@ export class Authenticator {
   }
 
   // TODO: unit test
-  static getEphemeralMessage(ephemeralAddress: string, expiration: Date) {
+  export function getEphemeralMessage(
+    ephemeralAddress: string,
+    expiration: Date
+  ) {
     return `Decentraland Login\nEphemeral address: ${ephemeralAddress}\nExpiration: ${expiration.toISOString()}`
   }
 }
@@ -246,11 +251,9 @@ export const ECDSA_SIGNED_ENTITY_VALIDATOR: ValidatorType = async (
   authority: string,
   authLink: AuthLink
 ) => {
-  const signerAddress = computeAddress(
-    recoverPublicKey(
-      hexToBytes(authLink.signature),
-      Authenticator.createEthereumMessageHash(authLink.payload)
-    )
+  const signerAddress = recoverAddressFromEthSignature(
+    authLink.signature,
+    authLink.payload
   )
   const expectedSignedAddress = authority.toLocaleLowerCase()
   const actualSignedAddress = signerAddress.toLocaleLowerCase()
@@ -279,11 +282,9 @@ export const ECDSA_PERSONAL_EPHEMERAL_VALIDATOR: ValidatorType = async (
     : Date.now()
 
   if (expiration > dateToValidateExpirationInMillis) {
-    const signerAddress = computeAddress(
-      recoverPublicKey(
-        hexToBytes(authLink.signature),
-        Authenticator.createEthereumMessageHash(message)
-      )
+    const signerAddress = recoverAddressFromEthSignature(
+      authLink.signature,
+      message
     )
     const expectedSignedAddress = authority.toLocaleLowerCase()
     const actualSignedAddress = signerAddress.toLocaleLowerCase()
