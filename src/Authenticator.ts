@@ -1,6 +1,9 @@
-import { keccak256 } from 'ethereum-cryptography/keccak'
-import { utf8ToBytes } from 'ethereum-cryptography/utils'
-import RequestManager, { bytesToHex, hexToBytes } from 'eth-connect'
+import RequestManager, {
+  bytesToHex,
+  hexToBytes,
+  sha3,
+  stringToUtf8Bytes
+} from 'eth-connect'
 import { SignatureValidator } from './contracts/SignatureValidator'
 import {
   AuthIdentity,
@@ -87,7 +90,7 @@ export namespace Authenticator {
   // TODO: unit test
   // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1271.md
   export function createEIP1271MessageHash(msg: string) {
-    return keccak256(utf8ToBytes(msg))
+    return hexToBytes(sha3(stringToUtf8Bytes(msg)))
   }
 
   export function createSimpleAuthChain(

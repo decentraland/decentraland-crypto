@@ -1,8 +1,15 @@
-import { concatBytes, getAddress, hexToBytes, isHex } from 'eth-connect'
-import { keccak256 } from 'ethereum-cryptography/keccak'
+import {
+  bytesToHex,
+  concatBytes,
+  getAddress,
+  hexToBytes,
+  isHex,
+  sha3,
+  stringToUtf8Bytes,
+  toHex
+} from 'eth-connect'
 import { utils, getPublicKey } from 'ethereum-cryptography/secp256k1'
 import { ecdsaRecover, ecdsaSign } from 'ethereum-cryptography/secp256k1-compat'
-import { bytesToHex, toHex, utf8ToBytes } from 'ethereum-cryptography/utils'
 
 /**
  * returns the publicKey for the privateKey with which the messageHash was signed
@@ -60,18 +67,18 @@ export function recoverAddressFromEthSignature(
 export function sign(privateKey: Uint8Array, hash: Uint8Array): string {
   const sigObj = ecdsaSign(hash, privateKey)
   const recoveryId = sigObj.recid === 1 ? '1c' : '1b'
-  return '0x' + toHex(sigObj.signature) + recoveryId
+  return toHex(sigObj.signature) + recoveryId
 }
 
 // TODO: unit test
 export function createEthereumMessageHash(msg: string | Uint8Array) {
-  const message = typeof msg === 'string' ? utf8ToBytes(msg) : msg
+  const message = typeof msg === 'string' ? stringToUtf8Bytes(msg) : msg
   const bytes = concatBytes(
-    utf8ToBytes(`\x19Ethereum Signed Message:\n`),
-    utf8ToBytes(String(message.length)),
+    stringToUtf8Bytes(`\x19Ethereum Signed Message:\n`),
+    stringToUtf8Bytes(String(message.length)),
     message
   )
-  return keccak256(bytes)
+  return hexToBytes(sha3(bytes))
 }
 
 // Emulates eth_personalSign
@@ -85,7 +92,7 @@ export function ethSign(
 export function computeAddress(key: Uint8Array): string {
   // Strip off the leading "0x04"
   const publicKey = key.length === 65 && key[0] === 0x04 ? key.slice(1) : key
-  return getAddress(toHex(keccak256(publicKey)).substring(24))
+  return getAddress(sha3(publicKey).substring(24))
 }
 
 /**
@@ -98,7 +105,7 @@ export function createUnsafeIdentity() {
   const address = computeAddress(publicKey)
 
   return {
-    privateKey: '0x' + bytesToHex(privateKey),
+    privateKey: bytesToHex(privateKey),
     publicKey: bytesToHex(publicKey),
     address
   }
