@@ -15,12 +15,9 @@ import {
 import { moveMinutes } from './helper/utils'
 import Blocks from './helper/blocks'
 import {
-  computeAddress,
   createEthereumMessageHash as utilsCreateEthereumMessage,
   ethSign,
-  recoverAddressFromEthSignature,
-  recoverPublicKey,
-  sign
+  recoverAddressFromEthSignature
 } from './crypto'
 
 export const VALID_SIGNATURE: string = 'VALID_SIGNATURE'
@@ -44,7 +41,7 @@ export namespace Authenticator {
       }
     }
 
-    for (let authLink of authChain) {
+    for (const authLink of authChain) {
       const validator: ValidatorType = getValidatorByType(authLink.type)
       try {
         const { nextAuthority } = await validator(currentAuthority, authLink, {
@@ -160,7 +157,7 @@ export namespace Authenticator {
     ephemeralMinutesDuration: number,
     signer: (message: string) => Promise<string>
   ): Promise<AuthIdentity> {
-    let expiration = new Date()
+    const expiration = new Date()
     expiration.setMinutes(expiration.getMinutes() + ephemeralMinutesDuration)
 
     const ephemeralMessage = Authenticator.getEphemeralMessage(
@@ -312,9 +309,10 @@ export const ECDSA_EIP_1654_EPHEMERAL_VALIDATOR: ValidatorType = async (
     authLink.payload
   )
 
-  const dateToValidateExpirationInMillis = options?.dateToValidateExpirationInMillis
-    ? options?.dateToValidateExpirationInMillis
-    : Date.now()
+  const dateToValidateExpirationInMillis =
+    options?.dateToValidateExpirationInMillis
+      ? options?.dateToValidateExpirationInMillis
+      : Date.now()
   if (expiration > dateToValidateExpirationInMillis) {
     if (
       await isValidEIP1654Message(
@@ -376,9 +374,11 @@ export function getSignedIdentitySignatureType(
   }
 }
 
-export function parseEmphemeralPayload(
-  payload: string
-): { message: string; ephemeralAddress: string; expiration: number } {
+export function parseEmphemeralPayload(payload: string): {
+  message: string
+  ephemeralAddress: string
+  expiration: number
+} {
   // authLink payload structure: <human-readable message >\nEphemeral address: <ephemeral-eth - address >\nExpiration: <timestamp>
   // authLink payload example: Decentraland Login\nEphemeral address: 0x123456\nExpiration: 2020 - 01 - 20T22: 57: 11.334Z
   const message = payload.replace(/\r/g, '')

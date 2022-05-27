@@ -32,7 +32,7 @@ const prodAuthChain: AuthChain = [
   }
 ]
 
-describe('Crypto utils', function() {
+describe('Crypto utils', function () {
   it('recovers a signature', async () => {
     const identity = createUnsafeIdentity()
     const hash = keccak256(utf8ToBytes('test'))
@@ -130,7 +130,7 @@ describe('Crypto utils', function() {
       realAccount.address,
       ephemeralIdentity,
       10,
-      async message => {
+      async (message) => {
         return Authenticator.createSignature(realAccount, message)
       }
     )

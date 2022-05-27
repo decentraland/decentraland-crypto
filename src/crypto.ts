@@ -1,10 +1,4 @@
-import {
-  concatBytes,
-  getAddress,
-  hexToBytes,
-  isHex,
-  toStringData
-} from 'eth-connect'
+import { concatBytes, getAddress, hexToBytes, isHex } from 'eth-connect'
 import { keccak256 } from 'ethereum-cryptography/keccak'
 import { utils, getPublicKey } from 'ethereum-cryptography/secp256k1'
 import { ecdsaRecover, ecdsaSign } from 'ethereum-cryptography/secp256k1-compat'
@@ -26,13 +20,13 @@ export function recoverPublicKey(
   // split into v-value and sig
   const sigOnly = signature.slice(0, signature.length - 1) // all but last 2 chars
   const recoveryNumber = signature[64] === 0x1c ? 1 : 0
-  let pubKey = ecdsaRecover(sigOnly, recoveryNumber, hash, false)
+  const pubKey = ecdsaRecover(sigOnly, recoveryNumber, hash, false)
   // remove trailing '04'
   return pubKey.slice(1)
 }
 
 function sanitizeSignature(signature: Uint8Array): Uint8Array {
-  if (signature.length != 65) throw new Error('Invalid ethereum signature')
+  if (signature.length !== 65) throw new Error('Invalid ethereum signature')
 
   const version = signature[64]
 
@@ -71,7 +65,7 @@ export function sign(privateKey: Uint8Array, hash: Uint8Array): string {
 
 // TODO: unit test
 export function createEthereumMessageHash(msg: string | Uint8Array) {
-  const message = typeof msg == 'string' ? utf8ToBytes(msg) : msg
+  const message = typeof msg === 'string' ? utf8ToBytes(msg) : msg
   const bytes = concatBytes(
     utf8ToBytes(`\x19Ethereum Signed Message:\n`),
     utf8ToBytes(String(message.length)),
@@ -90,7 +84,7 @@ export function ethSign(
 
 export function computeAddress(key: Uint8Array): string {
   // Strip off the leading "0x04"
-  let publicKey = key.length == 65 && key[0] == 0x04 ? key.slice(1) : key
+  const publicKey = key.length === 65 && key[0] === 0x04 ? key.slice(1) : key
   return getAddress(toHex(keccak256(publicKey)).substring(24))
 }
 

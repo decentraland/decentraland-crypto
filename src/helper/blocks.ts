@@ -28,8 +28,8 @@ export default class Blocks {
   }
 
   async fillBlockTime() {
-    let latest = await this.getBlockWrapper('latest')
-    let first = await this.getBlockWrapper(1)
+    const latest = await this.getBlockWrapper('latest')
+    const first = await this.getBlockWrapper(1)
 
     this.blockTime =
       (latest.timestamp - first.timestamp) / Number(latest.number) - 1
@@ -68,7 +68,7 @@ export default class Blocks {
 
     this.checkedBlocks[dateInSeconds] = []
 
-    let predictedBlock = await this.getBlockWrapper(
+    const predictedBlock = await this.getBlockWrapper(
       Math.ceil((dateInSeconds - this.firstTimestamp! / this.blockTime!) / 1000)
     )
 
@@ -119,7 +119,9 @@ export default class Blocks {
         return false
       }
 
-      let previousBlock = await this.getBlockWrapper(predictedBlock.number - 1)
+      const previousBlock = await this.getBlockWrapper(
+        predictedBlock.number - 1
+      )
 
       if (blockTime >= date && previousBlock.timestamp < date) {
         return true
@@ -129,7 +131,7 @@ export default class Blocks {
         return false
       }
 
-      let nextBlock = await this.getBlockWrapper(predictedBlock.number + 1)
+      const nextBlock = await this.getBlockWrapper(predictedBlock.number + 1)
       if (blockTime < date && nextBlock.timestamp >= date) {
         return true
       }
@@ -139,7 +141,7 @@ export default class Blocks {
   }
 
   getNextBlock(date: number, currentBlock: number, skip: number) {
-    let nextBlock = currentBlock + skip
+    const nextBlock = currentBlock + skip
 
     if (this.checkedBlocks[date].includes(nextBlock)) {
       return this.getNextBlock(date, currentBlock, skip < 0 ? ++skip : --skip)
@@ -152,7 +154,10 @@ export default class Blocks {
 
   async getBlockWrapper(block: BlockIdentifier): Promise<SavedBlock> {
     if (!this.saveBlocks) {
-      const fetchedBlock = await this.requestManager.eth_getBlockByNumber(block, false)
+      const fetchedBlock = await this.requestManager.eth_getBlockByNumber(
+        block,
+        false
+      )
       return {
         number: toBigNumber(fetchedBlock.number).toNumber(),
         timestamp: toBigNumber(fetchedBlock.timestamp).toNumber()
@@ -171,11 +176,15 @@ export default class Blocks {
       return this.savedBlocks['latest']
     }
 
-    let { timestamp } = await this.requestManager.eth_getBlockByNumber(block, false)
+    const { timestamp } = await this.requestManager.eth_getBlockByNumber(
+      block,
+      false
+    )
 
     this.savedBlocks[block.toString()] = {
-      number:
-        toBigNumber(block === 'latest' ? await this.requestManager.eth_blockNumber() : block).toNumber(),
+      number: toBigNumber(
+        block === 'latest' ? await this.requestManager.eth_blockNumber() : block
+      ).toNumber(),
       timestamp: toBigNumber(timestamp).toNumber()
     }
 

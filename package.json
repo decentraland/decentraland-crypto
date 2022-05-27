@@ -45,12 +45,12 @@
     "ethereum-cryptography": "^1.0.3"
   },
   "devDependencies": {
+    "@dcl/eslint-config": "^1.0.3",
     "@types/jest": "^27.5.1",
+    "eslint": "^8.16.0",
     "eth-crypto": "^2.3.0",
-    "husky": "^1.0.1",
     "isomorphic-fetch": "^3.0.0",
     "jest": "^28.1.0",
-    "prettier": "^1.10.2",
     "ts-jest": "^28.0.3",
     "ts-node": "^10.8.0",
     "typescript": "^4.7.2"

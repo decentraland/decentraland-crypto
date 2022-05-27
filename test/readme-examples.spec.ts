@@ -10,7 +10,7 @@ import {
   sign
 } from '../src/crypto'
 
-describe('eth-crypto', function() {
+describe('eth-crypto', function () {
   it('sanity: recovers a signature', async () => {
     const identity = createIdentity()
     const hash = keccak256(utf8ToBytes('test'))
@@ -58,7 +58,7 @@ describe('eth-crypto', function() {
       realAccount.address,
       ephemeralIdentity,
       10,
-      async message => {
+      async (message) => {
         return Authenticator.createSignature(realAccount, message)
       }
     )

@@ -3,8 +3,8 @@ import { Authenticator } from '../src/Authenticator'
 import { AuthLinkType, AuthChain } from '../src/types'
 import { recoverAddressFromEthSignature } from '../src/crypto'
 
-describe('Sanity', function() {
-  it('Should work with production example', async function() {
+describe('Sanity', function () {
+  it('Should work with production example', async function () {
     jest.useFakeTimers().setSystemTime(0)
     const chain: AuthChain = [
       {
