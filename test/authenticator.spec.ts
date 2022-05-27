@@ -109,9 +109,7 @@ describe('Decentraland Crypto', function () {
       const result = await Authenticator.validateSignature(
         'QmXXYddXKWVGFMEgtGoPMCu6dbJ35TyYR4AkDHw9mUc1s1',
         chain,
-        new HTTPProvider(
-          'https://mainnet.infura.io/v3/2c902c2e3b8947d3b34bba7ca48635fc'
-        ),
+        new HTTPProvider('https://rpc.decentraland.org/mainnet'),
         1581680328512 // time when deployed
       )
 
@@ -154,9 +152,7 @@ describe('Decentraland Crypto', function () {
       const result = await Authenticator.validateSignature(
         'QmWyFNeHbxXaPtUnzKvDZPpKSa4d5anZEZEFJ8TC1WgcfU',
         chain,
-        new HTTPProvider(
-          'https://mainnet.infura.io/v3/2c902c2e3b8947d3b34bba7ca48635fc'
-        )
+        new HTTPProvider('https://rpc.decentraland.org/mainnet')
       )
 
       expect(result.ok).toEqual(true)
@@ -172,9 +168,7 @@ describe('Decentraland Crypto', function () {
       const result = await Authenticator.validateSignature(
         'QmNUd7Cyoo9CREGsACkvBrQSb3KjhWX379FVsdjTCGsTAz',
         chain,
-        new HTTPProvider(
-          'https://mainnet.infura.io/v3/2c902c2e3b8947d3b34bba7ca48635fc'
-        ),
+        new HTTPProvider('https://rpc.decentraland.org/mainnet'),
         1584541612291
       )
 
