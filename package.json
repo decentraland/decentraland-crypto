@@ -11,7 +11,8 @@
     "watch": "tsc --watch --project tsconfig.json",
     "test": "jest --detectOpenHandles --colors --runInBand --coverage",
     "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix"
+    "lint:fix": "eslint . --ext .ts --fix",
+    "bench": "node ./test/benchmark.js"
   },
   "nyc": {
     "all": true,
@@ -47,6 +48,7 @@
   "devDependencies": {
     "@dcl/eslint-config": "^1.0.3",
     "@types/jest": "^27.5.1",
+    "benchmark": "^2.1.4",
     "eslint": "^8.16.0",
     "eth-crypto": "^2.3.0",
     "isomorphic-fetch": "^3.0.0",

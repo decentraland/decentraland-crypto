@@ -25,6 +25,8 @@ jobs:
         run:  npm run test
       - name: lint
         run:  npm run lint
+      - name: benchmark
+        run:  npm run bench
       - name: Publish
         uses: menduz/oddish-action@master
         with:
