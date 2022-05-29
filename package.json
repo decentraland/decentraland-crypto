@@ -1,5 +1,5 @@
 {
-  "name": "dcl-crypto",
+  "name": "@dcl/crypto",
   "version": "3.0.0",
   "description": "Crypto auth for Decentraland",
   "main": "dist/index.js",
