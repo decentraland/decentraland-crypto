@@ -4,10 +4,8 @@
     "outDir": "dist",
     "module": "commonjs",
     "target": "es2018",
-    "lib": [
-      "es2018",
-      "DOM"
-    ],
+    "lib": ["es2018"],
+    "types": ["node", "jest"],
     "sourceMap": true,
     "moduleResolution": "node",
     "forceConsistentCasingInFileNames": true,
@@ -15,11 +13,7 @@
     "noImplicitThis": true,
     "noImplicitAny": false,
     "strictNullChecks": true,
-    "esModuleInterop": true,
     "suppressImplicitAnyIndexErrors": true,
     "declaration": true
-  },
-  "include": [
-    "./src"
-  ]
+  }
 }

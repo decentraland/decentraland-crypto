@@ -1,24 +1,42 @@
-import { Address } from 'web3x/address';
-import { TransactionReceipt } from 'web3x/formatters';
-import { Contract, ContractOptions, TxCall } from 'web3x/contract';
-import { Eth } from 'web3x/eth';
-import abi from './SignatureValidatorAbi';
-interface SignatureValidatorEvents { }
-interface SignatureValidatorEventLogs { }
-interface SignatureValidatorTxEventLogs { }
-export interface SignatureValidatorTransactionReceipt
-    extends TransactionReceipt<SignatureValidatorTxEventLogs> { }
-interface SignatureValidatorMethods {
-    isValidSignature(hash: string, _signature: string): TxCall<string>
+import RequestManager, { AbiItem, Contract, ContractFactory } from 'eth-connect'
+
+type SignatureValidator = Contract & {
+  isValidSignature(
+    hash: Uint8Array,
+    signature: Uint8Array,
+    block?: string | number
+  ): Promise<Uint8Array>
 }
-export interface SignatureValidatorDefinition {
-    methods: SignatureValidatorMethods
-    events: SignatureValidatorEvents
-    eventLogs: SignatureValidatorEventLogs
-}
-export class SignatureValidator extends Contract<SignatureValidatorDefinition> {
-    constructor(eth: Eth, address?: Address, options?: ContractOptions) {
-        super(eth, abi, address, options)
+
+export async function SignatureValidator(
+  requestManager: RequestManager,
+  address: string
+): Promise<SignatureValidator> {
+  const abi: AbiItem[] = [
+    {
+      constant: true,
+      inputs: [
+        {
+          name: 'hash',
+          type: 'bytes32'
+        },
+        {
+          name: '_signature',
+          type: 'bytes'
+        }
+      ],
+      name: 'isValidSignature',
+      outputs: [
+        {
+          name: 'magicValue',
+          type: 'bytes4'
+        }
+      ],
+      payable: false,
+      stateMutability: 'view',
+      type: 'function'
     }
+  ]
+
+  return (await new ContractFactory(requestManager, abi).at(address)) as any
 }
-export let SignatureValidatorAbi = abi
