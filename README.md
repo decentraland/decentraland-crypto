@@ -6,7 +6,7 @@
 ## How to Install
 
 ```bash
-  npm i dcl-crypto
+  npm i @dcl/crypto
 ```
 
 ## Create a new Identity using Ethers
