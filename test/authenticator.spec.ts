@@ -1,6 +1,6 @@
 import * as EthCrypto from 'eth-crypto'
 import { HTTPProvider } from 'eth-connect'
-import 'isomorphic-fetch'
+import fetch from 'node-fetch'
 
 import {
   Authenticator,
@@ -10,6 +10,13 @@ import {
 } from '../src/Authenticator'
 import { AuthLinkType, AuthChain } from '../src/types'
 import { moveMinutes } from '../src/helper/utils'
+
+const mainnetProvider = new HTTPProvider(
+  'https://rpc.decentraland.org/mainnet?project=dcl-crypto-ci',
+  { fetch: fetch }
+)
+
+mainnetProvider.debug = true
 
 const PERSONAL_SIGNATURE =
   '0x49c5d57fc804e6a06f83ee8d499aec293a84328766864d96349db599ef9ebacc072892ec1f3e2777bdc8265b53d8b84edd646bdc711dd5290c18adcc5de4a2831b'
@@ -43,7 +50,7 @@ describe('Decentraland Crypto', function () {
       const result = await Authenticator.validateSignature(
         'message',
         chain,
-        new HTTPProvider('https://rpc.decentraland.org/mainnet')
+        mainnetProvider
       )
 
       expect(result).toEqual({ ok: true, message: undefined })
@@ -75,7 +82,7 @@ describe('Decentraland Crypto', function () {
       const result = await Authenticator.validateSignature(
         'QmUsqJaHc5HQaBrojhBdjF4fr5MQc6CqhwZjqwhVRftNAo',
         chain,
-        new HTTPProvider('https://rpc.decentraland.org/mainnet')
+        mainnetProvider
       )
 
       // Restore
@@ -109,7 +116,7 @@ describe('Decentraland Crypto', function () {
       const result = await Authenticator.validateSignature(
         'QmXXYddXKWVGFMEgtGoPMCu6dbJ35TyYR4AkDHw9mUc1s1',
         chain,
-        new HTTPProvider('https://rpc.decentraland.org/mainnet'),
+        mainnetProvider,
         1581680328512 // time when deployed
       )
 
@@ -131,7 +138,7 @@ describe('Decentraland Crypto', function () {
         authority,
         authLink,
         {
-          provider: new HTTPProvider('https://rpc.decentraland.org/mainnet'),
+          provider: mainnetProvider,
           dateToValidateExpirationInMillis: Date.now()
         }
       )
@@ -152,7 +159,7 @@ describe('Decentraland Crypto', function () {
       const result = await Authenticator.validateSignature(
         'QmWyFNeHbxXaPtUnzKvDZPpKSa4d5anZEZEFJ8TC1WgcfU',
         chain,
-        new HTTPProvider('https://rpc.decentraland.org/mainnet')
+        mainnetProvider
       )
 
       expect(result.ok).toEqual(true)
@@ -168,7 +175,7 @@ describe('Decentraland Crypto', function () {
       const result = await Authenticator.validateSignature(
         'QmNUd7Cyoo9CREGsACkvBrQSb3KjhWX379FVsdjTCGsTAz',
         chain,
-        new HTTPProvider('https://rpc.decentraland.org/mainnet'),
+        mainnetProvider,
         1584541612291
       )
 
@@ -190,7 +197,7 @@ describe('Decentraland Crypto', function () {
         authority,
         authLink,
         {
-          provider: new HTTPProvider('https://rpc.decentraland.org/mainnet'),
+          provider: mainnetProvider,
           dateToValidateExpirationInMillis: Date.now()
         }
       )
@@ -228,7 +235,7 @@ describe('Decentraland Crypto', function () {
       const result = await Authenticator.validateSignature(
         'QmUe3LmUJ4NACAKJzwQhn5rZVpLLSyBLWBmTSzJYEesDNx',
         chain,
-        new HTTPProvider('https://rpc.decentraland.org/mainnet')
+        mainnetProvider
       )
 
       // Restore
@@ -264,7 +271,7 @@ describe('Decentraland Crypto', function () {
       const result = await Authenticator.validateSignature(
         'QmbGrShBQs4XiuoTNX6znAvXNdqtub8DtXyaxdSTZbHLCu',
         chain,
-        new HTTPProvider('https://rpc.decentraland.org/mainnet')
+        mainnetProvider
       )
 
       // Restore
@@ -283,7 +290,7 @@ describe('Decentraland Crypto', function () {
       }
       try {
         await ECDSA_PERSONAL_EPHEMERAL_VALIDATOR(authority, authLink, {
-          provider: new HTTPProvider('https://rpc.decentraland.org/mainnet'),
+          provider: mainnetProvider,
           dateToValidateExpirationInMillis: Date.now()
         })
       } catch (e) {
@@ -305,7 +312,7 @@ describe('Decentraland Crypto', function () {
       let result = await Authenticator.validateSignature(
         'message',
         chain,
-        new HTTPProvider('https://rpc.decentraland.org/mainnet')
+        mainnetProvider
       )
 
       expect(result.message).toMatch(
@@ -316,7 +323,7 @@ describe('Decentraland Crypto', function () {
       result = await Authenticator.validateSignature(
         'message',
         chain,
-        new HTTPProvider('https://rpc.decentraland.org/mainnet'),
+        mainnetProvider,
         moveMinutes(-10).getTime()
       )
 
@@ -325,7 +332,7 @@ describe('Decentraland Crypto', function () {
 
     it('should validate authChain', async function () {
       jest.useFakeTimers().setSystemTime(0)
-      const provider = new HTTPProvider('https://rpc.decentraland.org/mainnet')
+      const provider = mainnetProvider
       let chain: AuthChain = [
         {
           type: AuthLinkType.ECDSA_EIP_1654_EPHEMERAL,

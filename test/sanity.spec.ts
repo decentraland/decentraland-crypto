@@ -1,7 +1,13 @@
 import { getAddress, HTTPProvider } from 'eth-connect'
+import fetch from 'node-fetch'
 import { Authenticator } from '../src/Authenticator'
 import { AuthLinkType, AuthChain } from '../src/types'
 import { recoverAddressFromEthSignature } from '../src/crypto'
+
+const mainnetProvider = new HTTPProvider(
+  'https://rpc.decentraland.org/mainnet?project=dcl-crypto-ci',
+  { fetch: fetch as any }
+)
 
 describe('Sanity', function () {
   it('Should work with production example', async function () {
@@ -30,9 +36,7 @@ describe('Sanity', function () {
     const result = await Authenticator.validateSignature(
       'QmfQtX7BrXzZx7UwupsqNwKGirSZUVBpjN5whujwcp9qyk',
       chain,
-      new HTTPProvider(
-        'https://mainnet.infura.io/v3/640777fe168f4b0091c93726b4f0463a'
-      )
+      mainnetProvider
     )
 
     // Restore

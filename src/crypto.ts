@@ -70,7 +70,6 @@ export function sign(privateKey: Uint8Array, hash: Uint8Array): string {
   return toHex(sigObj.signature) + recoveryId
 }
 
-// TODO: unit test
 export function createEthereumMessageHash(msg: string | Uint8Array) {
   const message = typeof msg === 'string' ? stringToUtf8Bytes(msg) : msg
   const bytes = concatBytes(

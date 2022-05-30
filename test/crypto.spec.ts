@@ -2,7 +2,6 @@ import { keccak256 } from 'ethereum-cryptography/keccak'
 import { bytesToHex, utf8ToBytes } from 'ethereum-cryptography/utils'
 import { hexToBytes } from 'eth-connect'
 import { AuthChain, Authenticator, AuthLinkType } from '../src'
-import 'isomorphic-fetch'
 import {
   createUnsafeIdentity,
   ethSign,

@@ -70,7 +70,6 @@ export namespace Authenticator {
     }
   }
 
-  // TODO: unit test
   export function isValidAuthChain(authChain: AuthChain): boolean {
     for (const [index, authLink] of authChain.entries()) {
       // SIGNER should be the first one
@@ -87,7 +86,6 @@ export namespace Authenticator {
     return true
   }
 
-  // TODO: unit test
   // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1271.md
   export function createEIP1271MessageHash(msg: string) {
     return hexToBytes(sha3(stringToUtf8Bytes(msg)))
@@ -202,7 +200,6 @@ export namespace Authenticator {
 
   export const createEthereumMessageHash = utilsCreateEthereumMessage
 
-  // TODO: unit test
   export function createSignature(
     identity: IdentityType,
     message: string | Uint8Array
@@ -210,7 +207,6 @@ export namespace Authenticator {
     return ethSign(hexToBytes(identity.privateKey), message)
   }
 
-  // TODO: unit test
   export function ownerAddress(authChain: AuthChain): EthAddress {
     if (authChain.length > 0) {
       if (authChain[0].type === AuthLinkType.SIGNER) {
@@ -220,7 +216,6 @@ export namespace Authenticator {
     return 'Invalid-Owner-Address'
   }
 
-  // TODO: unit test
   export function getEphemeralMessage(
     ephemeralAddress: string,
     expiration: Date
