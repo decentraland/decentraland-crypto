@@ -48,7 +48,7 @@
   },
   "devDependencies": {
     "@dcl/eslint-config": "^1.0.3",
-    "@types/jest": "^27.5.1",
+    "@types/jest": "^28.1.1",
     "@types/node-fetch": "^2.6.1",
     "benchmark": "^2.1.4",
     "eslint": "^8.16.0",
