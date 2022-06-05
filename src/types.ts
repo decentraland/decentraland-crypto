@@ -1,27 +1,13 @@
 export type Signature = string
 export type EthAddress = string
 
+import { AuthChain, AuthLinkType, AuthLink } from '@dcl/schemas'
+export { AuthChain, AuthLinkType, AuthLink }
+
 export type IdentityType = {
   privateKey: string
   publicKey: string
   address: string
-}
-
-export type AuthChain = AuthLink[]
-
-export type AuthLink = {
-  type: AuthLinkType
-  payload: string
-  signature: Signature
-}
-
-export enum AuthLinkType {
-  SIGNER = 'SIGNER',
-  ECDSA_PERSONAL_EPHEMERAL = 'ECDSA_EPHEMERAL',
-  ECDSA_PERSONAL_SIGNED_ENTITY = 'ECDSA_SIGNED_ENTITY',
-  // https://github.com/ethereum/EIPs/issues/1654
-  ECDSA_EIP_1654_EPHEMERAL = 'ECDSA_EIP_1654_EPHEMERAL',
-  ECDSA_EIP_1654_SIGNED_ENTITY = 'ECDSA_EIP_1654_SIGNED_ENTITY'
 }
 
 export type AuthIdentity = {
