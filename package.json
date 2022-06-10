@@ -42,7 +42,7 @@
   },
   "homepage": "https://github.com/decentraland/decentraland-crypto#readme",
   "dependencies": {
-    "@dcl/schemas": "^4.14.1",
+    "@dcl/schemas": "^5.0.0",
     "eth-connect": "^6.0.3",
     "ethereum-cryptography": "^1.0.3"
   },
