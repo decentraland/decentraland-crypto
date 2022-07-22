@@ -1,13 +1,4 @@
-import {
-  bytesToHex,
-  concatBytes,
-  getAddress,
-  hexToBytes,
-  isHex,
-  sha3,
-  stringToUtf8Bytes,
-  toHex
-} from 'eth-connect'
+import { bytesToHex, concatBytes, getAddress, hexToBytes, isHex, sha3, stringToUtf8Bytes, toHex } from 'eth-connect'
 import { utils, getPublicKey } from 'ethereum-cryptography/secp256k1'
 import { ecdsaRecover, ecdsaSign } from 'ethereum-cryptography/secp256k1-compat'
 
@@ -16,10 +7,7 @@ import { ecdsaRecover, ecdsaSign } from 'ethereum-cryptography/secp256k1-compat'
  * @param  {string} signature
  * @param  {string} hash
  */
-export function recoverPublicKey(
-  signature: Uint8Array,
-  hash: Uint8Array
-): Uint8Array {
+export function recoverPublicKey(signature: Uint8Array, hash: Uint8Array): Uint8Array {
   if (signature.length !== 65) {
     throw new Error('Invalid signature length' + signature.length)
   }
@@ -46,22 +34,13 @@ function sanitizeSignature(signature: Uint8Array): Uint8Array {
   return signature
 }
 
-export function recoverAddressFromEthSignature(
-  signature: Uint8Array | string,
-  msg: string | Uint8Array
-) {
+export function recoverAddressFromEthSignature(signature: Uint8Array | string, msg: string | Uint8Array) {
   if (typeof signature === 'string') {
-    if (isHex(signature))
-      return recoverAddressFromEthSignature(hexToBytes(signature), msg)
+    if (isHex(signature)) return recoverAddressFromEthSignature(hexToBytes(signature), msg)
     throw new Error('String signatures must be encoded in hex')
   }
 
-  return computeAddress(
-    recoverPublicKey(
-      sanitizeSignature(signature),
-      createEthereumMessageHash(msg)
-    )
-  )
+  return computeAddress(recoverPublicKey(sanitizeSignature(signature), createEthereumMessageHash(msg)))
 }
 
 export function sign(privateKey: Uint8Array, hash: Uint8Array): string {
@@ -81,10 +60,7 @@ export function createEthereumMessageHash(msg: string | Uint8Array) {
 }
 
 // Emulates eth_personalSign
-export function ethSign(
-  privateKey: Uint8Array,
-  message: Uint8Array | string
-): string {
+export function ethSign(privateKey: Uint8Array, message: Uint8Array | string): string {
   return sign(privateKey, createEthereumMessageHash(message))
 }
 

@@ -2,13 +2,7 @@ import { keccak256 } from 'ethereum-cryptography/keccak'
 import { bytesToHex, utf8ToBytes } from 'ethereum-cryptography/utils'
 import { hexToBytes } from 'eth-connect'
 import { AuthChain, Authenticator, AuthLinkType } from '../src'
-import {
-  createUnsafeIdentity,
-  ethSign,
-  recoverAddressFromEthSignature,
-  recoverPublicKey,
-  sign
-} from '../src/crypto'
+import { createUnsafeIdentity, ethSign, recoverAddressFromEthSignature, recoverPublicKey, sign } from '../src/crypto'
 
 const prodAuthChain: AuthChain = [
   {
@@ -40,51 +34,33 @@ describe('Crypto utils', function () {
     expect(bytesToHex(recoveredPub)).toEqual(identity.publicKey)
   })
   it('recovers a the key correctly 1', async () => {
-    const recovered = recoverAddressFromEthSignature(
-      prodAuthChain[1].signature ?? '',
-      prodAuthChain[1].payload
-    )
-    expect(recovered.toLowerCase()).toEqual(
-      prodAuthChain[0].payload.toLowerCase()
-    )
+    const recovered = recoverAddressFromEthSignature(prodAuthChain[1].signature ?? '', prodAuthChain[1].payload)
+    expect(recovered.toLowerCase()).toEqual(prodAuthChain[0].payload.toLowerCase())
   })
   it('recovers a the key correctly 2', async () => {
-    const recovered = recoverAddressFromEthSignature(
-      prodAuthChain[2].signature ?? '',
-      prodAuthChain[2].payload
-    )
-    expect(recovered.toLowerCase()).toEqual(
-      '0x05Ac0D29E42F9ae09B0EfA250BD3385FC3D0a68B'.toLowerCase()
-    )
+    const recovered = recoverAddressFromEthSignature(prodAuthChain[2].signature ?? '', prodAuthChain[2].payload)
+    expect(recovered.toLowerCase()).toEqual('0x05Ac0D29E42F9ae09B0EfA250BD3385FC3D0a68B'.toLowerCase())
   })
 
   const tests = [
     {
       address: '0xEB014f8c8B418Db6b45774c326A0E64C78914dC0',
-      privateKey: hexToBytes(
-        '0xbe6383dad004f233317e46ddb46ad31b16064d14447a95cc1d8c8d4bc61c3728'
-      ),
+      privateKey: hexToBytes('0xbe6383dad004f233317e46ddb46ad31b16064d14447a95cc1d8c8d4bc61c3728'),
       data: 'Some data',
       signature:
         '0xa8037a6116c176a25e6fc224947fde9e79a2deaa0dd8b67b366fbdfdbffc01f953e41351267b20d4a89ebfe9c8f03c04de9b345add4a52f15bd026b63c8fb1501b'
     },
     {
       address: '0xEB014f8c8B418Db6b45774c326A0E64C78914dC0',
-      privateKey: hexToBytes(
-        '0xbe6383dad004f233317e46ddb46ad31b16064d14447a95cc1d8c8d4bc61c3728'
-      ),
+      privateKey: hexToBytes('0xbe6383dad004f233317e46ddb46ad31b16064d14447a95cc1d8c8d4bc61c3728'),
       data: 'Some data!%$$%&@*',
       signature:
         '0x05252412b097c5d080c994d1ea12abcee6f1cae23feb225517a0b691a66e12866b3f54292f9cfef98f390670b4d010fc4af7fcd46e41d72870602c117b14921c1c'
     },
     {
       address: '0xEB014f8c8B418Db6b45774c326A0E64C78914dC0',
-      privateKey: hexToBytes(
-        '0xbe6383dad004f233317e46ddb46ad31b16064d14447a95cc1d8c8d4bc61c3728'
-      ),
-      data: hexToBytes(
-        '0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470'
-      ),
+      privateKey: hexToBytes('0xbe6383dad004f233317e46ddb46ad31b16064d14447a95cc1d8c8d4bc61c3728'),
+      data: hexToBytes('0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470'),
       signature:
         '0xddd493679d80c9c74e0e5abd256a496dfb31b51cd39ea2c7c9e8a2a07de94a90257107a00d9cb631bacb85b208d66bfa7a80c639536b34884505eff352677dd01c'
     }
@@ -105,10 +81,7 @@ describe('Crypto utils', function () {
       })
 
       it('recover signature using a string', () => {
-        const address1 = recoverAddressFromEthSignature(
-          hexToBytes(test.signature),
-          test.data
-        )
+        const address1 = recoverAddressFromEthSignature(hexToBytes(test.signature), test.data)
 
         expect(address1).toEqual(test.address)
       })
@@ -138,10 +111,7 @@ describe('Crypto utils', function () {
     expect(chain.authChain[0].payload).toEqual(realAccount.address)
 
     expect(chain.authChain[1].type).toEqual('ECDSA_EPHEMERAL')
-    const recovered = recoverAddressFromEthSignature(
-      chain.authChain[1].signature ?? '',
-      chain.authChain[1].payload
-    )
+    const recovered = recoverAddressFromEthSignature(chain.authChain[1].signature ?? '', chain.authChain[1].payload)
     expect(recovered).toEqual(realAccount.address)
   })
 })

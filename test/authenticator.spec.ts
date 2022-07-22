@@ -11,10 +11,7 @@ import {
 import { AuthLinkType, AuthChain } from '../src/types'
 import { moveMinutes } from '../src/helper/utils'
 
-const mainnetProvider = new HTTPProvider(
-  'https://rpc.decentraland.org/mainnet?project=dcl-crypto-ci',
-  { fetch: fetch }
-)
+const mainnetProvider = new HTTPProvider('https://rpc.decentraland.org/mainnet?project=dcl-crypto-ci', { fetch: fetch })
 
 mainnetProvider.debug = true
 
@@ -27,13 +24,9 @@ describe('Decentraland Crypto', function () {
   jest.setTimeout(999999)
   describe('Get signature type', function () {
     it('should return the correct signature type', function () {
-      expect(getEphemeralSignatureType(PERSONAL_SIGNATURE)).toEqual(
-        AuthLinkType.ECDSA_PERSONAL_EPHEMERAL
-      )
+      expect(getEphemeralSignatureType(PERSONAL_SIGNATURE)).toEqual(AuthLinkType.ECDSA_PERSONAL_EPHEMERAL)
 
-      expect(getEphemeralSignatureType(CONTRACT_WALLET_SIGNATURE)).toEqual(
-        AuthLinkType.ECDSA_EIP_1654_EPHEMERAL
-      )
+      expect(getEphemeralSignatureType(CONTRACT_WALLET_SIGNATURE)).toEqual(AuthLinkType.ECDSA_EIP_1654_EPHEMERAL)
     })
   })
 
@@ -41,17 +34,8 @@ describe('Decentraland Crypto', function () {
     it('should validate request :: personal sign', async function () {
       const identity = EthCrypto.createIdentity()
       const ephemeral = EthCrypto.createIdentity()
-      const chain = Authenticator.createAuthChain(
-        identity,
-        ephemeral,
-        5,
-        'message'
-      )
-      const result = await Authenticator.validateSignature(
-        'message',
-        chain,
-        mainnetProvider
-      )
+      const chain = Authenticator.createAuthChain(identity, ephemeral, 5, 'message')
+      const result = await Authenticator.validateSignature('message', chain, mainnetProvider)
 
       expect(result).toEqual({ ok: true, message: undefined })
     })
@@ -134,14 +118,10 @@ describe('Decentraland Crypto', function () {
         signature: CONTRACT_WALLET_SIGNATURE
       }
 
-      const result = await ECDSA_EIP_1654_EPHEMERAL_VALIDATOR(
-        authority,
-        authLink,
-        {
-          provider: mainnetProvider,
-          dateToValidateExpirationInMillis: Date.now()
-        }
-      )
+      const result = await ECDSA_EIP_1654_EPHEMERAL_VALIDATOR(authority, authLink, {
+        provider: mainnetProvider,
+        dateToValidateExpirationInMillis: Date.now()
+      })
 
       // Restore
       jest.useRealTimers()
@@ -193,14 +173,10 @@ describe('Decentraland Crypto', function () {
         signature: CONTRACT_WALLET_SIGNATURE
       }
 
-      const result = await ECDSA_EIP_1654_EPHEMERAL_VALIDATOR(
-        authority,
-        authLink,
-        {
-          provider: mainnetProvider,
-          dateToValidateExpirationInMillis: Date.now()
-        }
-      )
+      const result = await ECDSA_EIP_1654_EPHEMERAL_VALIDATOR(authority, authLink, {
+        provider: mainnetProvider,
+        dateToValidateExpirationInMillis: Date.now()
+      })
 
       // Restore
       jest.useRealTimers()
@@ -301,31 +277,15 @@ describe('Decentraland Crypto', function () {
     it('expiration check can be configured', async function () {
       const identity = EthCrypto.createIdentity()
       const ephemeral = EthCrypto.createIdentity()
-      const chain = Authenticator.createAuthChain(
-        identity,
-        ephemeral,
-        -5,
-        'message'
-      )
+      const chain = Authenticator.createAuthChain(identity, ephemeral, -5, 'message')
 
       // Since the ephemeral expired 5 minutes ago, validation should fail
-      let result = await Authenticator.validateSignature(
-        'message',
-        chain,
-        mainnetProvider
-      )
+      let result = await Authenticator.validateSignature('message', chain, mainnetProvider)
 
-      expect(result.message).toMatch(
-        'ERROR. Link type: ECDSA_EPHEMERAL. Ephemeral key expired.'
-      )
+      expect(result.message).toMatch('ERROR. Link type: ECDSA_EPHEMERAL. Ephemeral key expired.')
 
       // Since we are checking the ephemeral against 10 minutes ago, validation should pass
-      result = await Authenticator.validateSignature(
-        'message',
-        chain,
-        mainnetProvider,
-        moveMinutes(-10).getTime()
-      )
+      result = await Authenticator.validateSignature('message', chain, mainnetProvider, moveMinutes(-10).getTime())
 
       expect(result.ok).toEqual(true)
     })
@@ -394,11 +354,7 @@ describe('Decentraland Crypto', function () {
         }
       ]
 
-      result = await Authenticator.validateSignature(
-        'QmUsqJaHc5HQaBrojhBdjF4fr5MQc6CqhwZjqwhVRftNAo',
-        chain,
-        provider
-      )
+      result = await Authenticator.validateSignature('QmUsqJaHc5HQaBrojhBdjF4fr5MQc6CqhwZjqwhVRftNAo', chain, provider)
       expect(Authenticator.isValidAuthChain(chain)).toEqual(false)
 
       expect(result.message).toMatch('ERROR: Malformed authChain')
@@ -429,11 +385,7 @@ describe('Decentraland Crypto', function () {
         }
       ]
 
-      result = await Authenticator.validateSignature(
-        'QmUsqJaHc5HQaBrojhBdjF4fr5MQc6CqhwZjqwhVRftNAo',
-        chain,
-        provider
-      )
+      result = await Authenticator.validateSignature('QmUsqJaHc5HQaBrojhBdjF4fr5MQc6CqhwZjqwhVRftNAo', chain, provider)
       expect(result.message).toMatch('ERROR: Malformed authChain')
       expect(Authenticator.isValidAuthChain(chain)).toEqual(false)
 
