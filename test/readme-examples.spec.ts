@@ -43,7 +43,7 @@ describe('eth-crypto', function () {
 
     expect(authChain[1].type).toEqual('ECDSA_EPHEMERAL')
     const recovered = recoverAddressFromEthSignature(
-      authChain[1].signature,
+      authChain[1].signature ?? '',
       authChain[1].payload
     )
     expect(recovered).toEqual(realAccount.address)
@@ -68,7 +68,7 @@ describe('eth-crypto', function () {
 
     expect(authenticator.authChain[1].type).toEqual('ECDSA_EPHEMERAL')
     const recovered = recoverAddressFromEthSignature(
-      authenticator.authChain[1].signature,
+      authenticator.authChain[1].signature ?? '',
       authenticator.authChain[1].payload
     )
     expect(recovered).toEqual(realAccount.address)
