@@ -246,6 +246,11 @@ export const ECDSA_SIGNED_ENTITY_VALIDATOR: ValidatorType = async (
   authority: string,
   authLink: AuthLink
 ) => {
+  if (!authLink.signature) {
+    throw new Error(
+      `Invalid AuthLink. 'signature' must be present for type 'ECDSA_SIGNED_ENTITY_VALIDATOR'`
+    )
+  }
   const signerAddress = recoverAddressFromEthSignature(
     authLink.signature,
     authLink.payload
@@ -267,6 +272,11 @@ export const ECDSA_PERSONAL_EPHEMERAL_VALIDATOR: ValidatorType = async (
   authLink: AuthLink,
   options?: ValidationOptions
 ) => {
+  if (!authLink.signature) {
+    throw new Error(
+      `Invalid AuthLink. 'signature' must be present for type 'ECDSA_PERSONAL_EPHEMERAL_VALIDATOR'`
+    )
+  }
   const { message, ephemeralAddress, expiration } = parseEmphemeralPayload(
     authLink.payload
   )
@@ -303,6 +313,11 @@ export const ECDSA_EIP_1654_EPHEMERAL_VALIDATOR: ValidatorType = async (
   authLink: AuthLink,
   options?: ValidationOptions
 ) => {
+  if (!authLink.signature) {
+    throw new Error(
+      `Invalid AuthLink. 'signature' must be present for type 'ECDSA_EIP_1654_EPHEMERAL_VALIDATOR'`
+    )
+  }
   const { message, ephemeralAddress, expiration } = parseEmphemeralPayload(
     authLink.payload
   )
@@ -335,6 +350,11 @@ export const EIP_1654_SIGNED_ENTITY_VALIDATOR: ValidatorType = async (
   authLink: AuthLink,
   options?: ValidationOptions
 ) => {
+  if (!authLink.signature) {
+    throw new Error(
+      `Invalid AuthLink. 'signature' must be present for type 'EIP_1654_SIGNED_ENTITY_VALIDATOR'`
+    )
+  }
   if (
     await isValidEIP1654Message(
       options!.provider,

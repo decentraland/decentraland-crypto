@@ -86,7 +86,7 @@ describe('static-signatures', () => {
     {
       expect(chain[1].type).toEqual('ECDSA_EPHEMERAL')
       const recovered = recoverAddressFromEthSignature(
-        chain[1].signature,
+        chain[1].signature ?? '',
         chain[1].payload
       )
       expect(recovered).toEqual(getAddress(realAccount.address))
@@ -95,7 +95,7 @@ describe('static-signatures', () => {
     {
       expect(chain[2].type).toEqual('ECDSA_SIGNED_ENTITY')
       const recovered = recoverAddressFromEthSignature(
-        chain[2].signature,
+        chain[2].signature ?? '',
         chain[2].payload
       )
       expect(recovered).toEqual(getAddress(ephemeralIdentity.address))
