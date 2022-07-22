@@ -41,7 +41,7 @@ describe('Crypto utils', function () {
   })
   it('recovers a the key correctly 1', async () => {
     const recovered = recoverAddressFromEthSignature(
-      prodAuthChain[1].signature,
+      prodAuthChain[1].signature ?? '',
       prodAuthChain[1].payload
     )
     expect(recovered.toLowerCase()).toEqual(
@@ -50,7 +50,7 @@ describe('Crypto utils', function () {
   })
   it('recovers a the key correctly 2', async () => {
     const recovered = recoverAddressFromEthSignature(
-      prodAuthChain[2].signature,
+      prodAuthChain[2].signature ?? '',
       prodAuthChain[2].payload
     )
     expect(recovered.toLowerCase()).toEqual(
@@ -139,7 +139,7 @@ describe('Crypto utils', function () {
 
     expect(chain.authChain[1].type).toEqual('ECDSA_EPHEMERAL')
     const recovered = recoverAddressFromEthSignature(
-      chain.authChain[1].signature,
+      chain.authChain[1].signature ?? '',
       chain.authChain[1].payload
     )
     expect(recovered).toEqual(realAccount.address)
