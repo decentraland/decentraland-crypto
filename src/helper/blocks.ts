@@ -31,8 +31,7 @@ export default class Blocks {
     const latest = await this.getBlockWrapper('latest')
     const first = await this.getBlockWrapper(1)
 
-    this.blockTime =
-      (latest.timestamp - first.timestamp) / Number(latest.number) - 1
+    this.blockTime = (latest.timestamp - first.timestamp) / Number(latest.number) - 1
     this.firstTimestamp = first.timestamp
   }
 
@@ -40,10 +39,7 @@ export default class Blocks {
     const dateInSeconds = date / 1000
     const now = Date.now() / 1000
 
-    if (
-      typeof this.firstTimestamp === 'undefined' ||
-      typeof this.blockTime === 'undefined'
-    ) {
+    if (typeof this.firstTimestamp === 'undefined' || typeof this.blockTime === 'undefined') {
       await this.fillBlockTime()
     }
 
@@ -54,14 +50,9 @@ export default class Blocks {
       }
     }
 
-    if (
-      dateInSeconds >= now ||
-      dateInSeconds > this.savedBlocks['latest'].timestamp
-    ) {
+    if (dateInSeconds >= now || dateInSeconds > this.savedBlocks['latest'].timestamp) {
       return {
-        block: toBigNumber(
-          await this.requestManager.eth_blockNumber()
-        ).toNumber(),
+        block: toBigNumber(await this.requestManager.eth_blockNumber()).toNumber(),
         timestamp: dateInSeconds
       }
     }
@@ -78,12 +69,7 @@ export default class Blocks {
     }
   }
 
-  async findBetter(
-    date: number,
-    predictedBlock: SavedBlock,
-    after: boolean,
-    blockTime: number = this.blockTime!
-  ) {
+  async findBetter(date: number, predictedBlock: SavedBlock, after: boolean, blockTime: number = this.blockTime!) {
     if (await this.isBetterBlock(date, predictedBlock, after)) {
       return predictedBlock.number
     }
@@ -95,23 +81,16 @@ export default class Blocks {
       skip = difference < 0 ? -1 : 1
     }
 
-    const nextPredictedBlock = await this.getBlockWrapper(
-      this.getNextBlock(date, predictedBlock.number, skip)
-    )
+    const nextPredictedBlock = await this.getBlockWrapper(this.getNextBlock(date, predictedBlock.number, skip))
 
     blockTime = Math.abs(
-      (predictedBlock.timestamp - nextPredictedBlock.timestamp) /
-        (predictedBlock.number - nextPredictedBlock.number)
+      (predictedBlock.timestamp - nextPredictedBlock.timestamp) / (predictedBlock.number - nextPredictedBlock.number)
     )
 
     return this.findBetter(date, nextPredictedBlock, after, blockTime)
   }
 
-  async isBetterBlock(
-    date: number,
-    predictedBlock: SavedBlock,
-    after: boolean
-  ) {
+  async isBetterBlock(date: number, predictedBlock: SavedBlock, after: boolean) {
     const blockTime = predictedBlock.timestamp
 
     if (after) {
@@ -119,9 +98,7 @@ export default class Blocks {
         return false
       }
 
-      const previousBlock = await this.getBlockWrapper(
-        predictedBlock.number - 1
-      )
+      const previousBlock = await this.getBlockWrapper(predictedBlock.number - 1)
 
       if (blockTime >= date && previousBlock.timestamp < date) {
         return true
@@ -154,10 +131,7 @@ export default class Blocks {
 
   async getBlockWrapper(block: BlockIdentifier): Promise<SavedBlock> {
     if (!this.saveBlocks) {
-      const fetchedBlock = await this.requestManager.eth_getBlockByNumber(
-        block,
-        false
-      )
+      const fetchedBlock = await this.requestManager.eth_getBlockByNumber(block, false)
       return {
         number: toBigNumber(fetchedBlock.number).toNumber(),
         timestamp: toBigNumber(fetchedBlock.timestamp).toNumber()
@@ -168,23 +142,14 @@ export default class Blocks {
       return this.savedBlocks[block]
     }
 
-    if (
-      typeof block === 'number' &&
-      this.savedBlocks['latest'] &&
-      this.savedBlocks['latest'].number <= block
-    ) {
+    if (typeof block === 'number' && this.savedBlocks['latest'] && this.savedBlocks['latest'].number <= block) {
       return this.savedBlocks['latest']
     }
 
-    const { timestamp } = await this.requestManager.eth_getBlockByNumber(
-      block,
-      false
-    )
+    const { timestamp } = await this.requestManager.eth_getBlockByNumber(block, false)
 
     this.savedBlocks[block.toString()] = {
-      number: toBigNumber(
-        block === 'latest' ? await this.requestManager.eth_blockNumber() : block
-      ).toNumber(),
+      number: toBigNumber(block === 'latest' ? await this.requestManager.eth_blockNumber() : block).toNumber(),
       timestamp: toBigNumber(timestamp).toNumber()
     }
 

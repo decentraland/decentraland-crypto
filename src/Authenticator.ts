@@ -1,9 +1,4 @@
-import RequestManager, {
-  bytesToHex,
-  hexToBytes,
-  sha3,
-  stringToUtf8Bytes
-} from 'eth-connect'
+import RequestManager, { bytesToHex, hexToBytes, sha3, stringToUtf8Bytes } from 'eth-connect'
 import { SignatureValidator } from './contracts/SignatureValidator'
 import {
   AuthIdentity,
@@ -118,18 +113,9 @@ export namespace Authenticator {
   ): AuthChain {
     const expiration = moveMinutes(ephemeralMinutesDuration)
 
-    const ephemeralMessage = Authenticator.getEphemeralMessage(
-      ephemeralIdentity.address,
-      expiration
-    )
-    const firstSignature = Authenticator.createSignature(
-      ownerIdentity,
-      ephemeralMessage
-    )
-    const secondSignature = Authenticator.createSignature(
-      ephemeralIdentity,
-      entityId
-    )
+    const ephemeralMessage = Authenticator.getEphemeralMessage(ephemeralIdentity.address, expiration)
+    const firstSignature = Authenticator.createSignature(ownerIdentity, ephemeralMessage)
+    const secondSignature = Authenticator.createSignature(ephemeralIdentity, entityId)
 
     const authChain: AuthChain = [
       {
@@ -161,10 +147,7 @@ export namespace Authenticator {
     const expiration = new Date()
     expiration.setMinutes(expiration.getMinutes() + ephemeralMinutesDuration)
 
-    const ephemeralMessage = Authenticator.getEphemeralMessage(
-      ephemeralIdentity.address,
-      expiration
-    )
+    const ephemeralMessage = Authenticator.getEphemeralMessage(ephemeralIdentity.address, expiration)
     const firstSignature = await signer(ephemeralMessage)
 
     const authChain: AuthChain = [
@@ -184,10 +167,7 @@ export namespace Authenticator {
   }
 
   export function signPayload(authIdentity: AuthIdentity, entityId: string) {
-    const secondSignature = Authenticator.createSignature(
-      authIdentity.ephemeralIdentity,
-      entityId
-    )
+    const secondSignature = Authenticator.createSignature(authIdentity.ephemeralIdentity, entityId)
     return [
       ...authIdentity.authChain,
       {
@@ -200,10 +180,7 @@ export namespace Authenticator {
 
   export const createEthereumMessageHash = utilsCreateEthereumMessage
 
-  export function createSignature(
-    identity: IdentityType,
-    message: string | Uint8Array
-  ) {
+  export function createSignature(identity: IdentityType, message: string | Uint8Array) {
     return ethSign(hexToBytes(identity.privateKey), message)
   }
 
@@ -216,10 +193,7 @@ export namespace Authenticator {
     return 'Invalid-Owner-Address'
   }
 
-  export function getEphemeralMessage(
-    ephemeralAddress: string,
-    expiration: Date
-  ) {
+  export function getEphemeralMessage(ephemeralAddress: string, expiration: Date) {
     return `Decentraland Login\nEphemeral address: ${ephemeralAddress}\nExpiration: ${expiration.toISOString()}`
   }
 }
@@ -235,26 +209,15 @@ type ValidationOptions = {
   provider?: any
 }
 
-export const SIGNER_VALIDATOR: ValidatorType = async (
-  _: string,
-  authLink: AuthLink
-) => {
+export const SIGNER_VALIDATOR: ValidatorType = async (_: string, authLink: AuthLink) => {
   return { nextAuthority: authLink.payload }
 }
 
-export const ECDSA_SIGNED_ENTITY_VALIDATOR: ValidatorType = async (
-  authority: string,
-  authLink: AuthLink
-) => {
+export const ECDSA_SIGNED_ENTITY_VALIDATOR: ValidatorType = async (authority: string, authLink: AuthLink) => {
   if (!authLink.signature) {
-    throw new Error(
-      `Invalid AuthLink. 'signature' must be present for type 'ECDSA_SIGNED_ENTITY_VALIDATOR'`
-    )
+    throw new Error(`Invalid AuthLink. 'signature' must be present for type 'ECDSA_SIGNED_ENTITY_VALIDATOR'`)
   }
-  const signerAddress = recoverAddressFromEthSignature(
-    authLink.signature,
-    authLink.payload
-  )
+  const signerAddress = recoverAddressFromEthSignature(authLink.signature, authLink.payload)
   const expectedSignedAddress = authority.toLocaleLowerCase()
   const actualSignedAddress = signerAddress.toLocaleLowerCase()
 
@@ -262,9 +225,7 @@ export const ECDSA_SIGNED_ENTITY_VALIDATOR: ValidatorType = async (
     return { nextAuthority: authLink.payload }
   }
 
-  throw new Error(
-    `Invalid signer address. Expected: ${expectedSignedAddress}. Actual: ${actualSignedAddress}`
-  )
+  throw new Error(`Invalid signer address. Expected: ${expectedSignedAddress}. Actual: ${actualSignedAddress}`)
 }
 
 export const ECDSA_PERSONAL_EPHEMERAL_VALIDATOR: ValidatorType = async (
@@ -273,24 +234,16 @@ export const ECDSA_PERSONAL_EPHEMERAL_VALIDATOR: ValidatorType = async (
   options?: ValidationOptions
 ) => {
   if (!authLink.signature) {
-    throw new Error(
-      `Invalid AuthLink. 'signature' must be present for type 'ECDSA_PERSONAL_EPHEMERAL_VALIDATOR'`
-    )
+    throw new Error(`Invalid AuthLink. 'signature' must be present for type 'ECDSA_PERSONAL_EPHEMERAL_VALIDATOR'`)
   }
-  const { message, ephemeralAddress, expiration } = parseEmphemeralPayload(
-    authLink.payload
-  )
+  const { message, ephemeralAddress, expiration } = parseEmphemeralPayload(authLink.payload)
 
-  const dateToValidateExpirationInMillis = options!
-    .dateToValidateExpirationInMillis
+  const dateToValidateExpirationInMillis = options!.dateToValidateExpirationInMillis
     ? options!.dateToValidateExpirationInMillis
     : Date.now()
 
   if (expiration > dateToValidateExpirationInMillis) {
-    const signerAddress = recoverAddressFromEthSignature(
-      authLink.signature,
-      message
-    )
+    const signerAddress = recoverAddressFromEthSignature(authLink.signature, message)
     const expectedSignedAddress = authority.toLocaleLowerCase()
     const actualSignedAddress = signerAddress.toLocaleLowerCase()
 
@@ -298,14 +251,10 @@ export const ECDSA_PERSONAL_EPHEMERAL_VALIDATOR: ValidatorType = async (
       return { nextAuthority: ephemeralAddress }
     }
 
-    throw new Error(
-      `Invalid signer address. Expected: ${expectedSignedAddress}. Actual: ${actualSignedAddress}`
-    )
+    throw new Error(`Invalid signer address. Expected: ${expectedSignedAddress}. Actual: ${actualSignedAddress}`)
   }
 
-  throw new Error(
-    `Ephemeral key expired. Expiration: ${expiration}. Test: ${dateToValidateExpirationInMillis}`
-  )
+  throw new Error(`Ephemeral key expired. Expiration: ${expiration}. Test: ${dateToValidateExpirationInMillis}`)
 }
 
 export const ECDSA_EIP_1654_EPHEMERAL_VALIDATOR: ValidatorType = async (
@@ -314,18 +263,13 @@ export const ECDSA_EIP_1654_EPHEMERAL_VALIDATOR: ValidatorType = async (
   options?: ValidationOptions
 ) => {
   if (!authLink.signature) {
-    throw new Error(
-      `Invalid AuthLink. 'signature' must be present for type 'ECDSA_EIP_1654_EPHEMERAL_VALIDATOR'`
-    )
+    throw new Error(`Invalid AuthLink. 'signature' must be present for type 'ECDSA_EIP_1654_EPHEMERAL_VALIDATOR'`)
   }
-  const { message, ephemeralAddress, expiration } = parseEmphemeralPayload(
-    authLink.payload
-  )
+  const { message, ephemeralAddress, expiration } = parseEmphemeralPayload(authLink.payload)
 
-  const dateToValidateExpirationInMillis =
-    options?.dateToValidateExpirationInMillis
-      ? options?.dateToValidateExpirationInMillis
-      : Date.now()
+  const dateToValidateExpirationInMillis = options?.dateToValidateExpirationInMillis
+    ? options?.dateToValidateExpirationInMillis
+    : Date.now()
   if (expiration > dateToValidateExpirationInMillis) {
     if (
       await isValidEIP1654Message(
@@ -340,9 +284,7 @@ export const ECDSA_EIP_1654_EPHEMERAL_VALIDATOR: ValidatorType = async (
     }
   }
 
-  throw new Error(
-    `Ephemeral key expired. Expiration: ${expiration}. Test: ${dateToValidateExpirationInMillis}`
-  )
+  throw new Error(`Ephemeral key expired. Expiration: ${expiration}. Test: ${dateToValidateExpirationInMillis}`)
 }
 
 export const EIP_1654_SIGNED_ENTITY_VALIDATOR: ValidatorType = async (
@@ -351,9 +293,7 @@ export const EIP_1654_SIGNED_ENTITY_VALIDATOR: ValidatorType = async (
   options?: ValidationOptions
 ) => {
   if (!authLink.signature) {
-    throw new Error(
-      `Invalid AuthLink. 'signature' must be present for type 'EIP_1654_SIGNED_ENTITY_VALIDATOR'`
-    )
+    throw new Error(`Invalid AuthLink. 'signature' must be present for type 'EIP_1654_SIGNED_ENTITY_VALIDATOR'`)
   }
   if (
     await isValidEIP1654Message(
@@ -382,9 +322,7 @@ export function getEphemeralSignatureType(signature: string): AuthLinkType {
   }
 }
 
-export function getSignedIdentitySignatureType(
-  signature: string
-): AuthLinkType {
+export function getSignedIdentitySignatureType(signature: string): AuthLinkType {
   if (signature.length === PERSONAL_SIGNATURE_LENGTH) {
     return AuthLinkType.ECDSA_PERSONAL_SIGNED_ENTITY
   } else {
@@ -401,12 +339,8 @@ export function parseEmphemeralPayload(payload: string): {
   // authLink payload example: Decentraland Login\nEphemeral address: 0x123456\nExpiration: 2020 - 01 - 20T22: 57: 11.334Z
   const message = payload.replace(/\r/g, '')
   const payloadParts: string[] = message.split('\n')
-  const ephemeralAddress: string = payloadParts[1].substring(
-    'Ephemeral address: '.length
-  )
-  const expirationString: string = payloadParts[2].substring(
-    'Expiration: '.length
-  )
+  const ephemeralAddress: string = payloadParts[1].substring('Ephemeral address: '.length)
+  const expirationString: string = payloadParts[2].substring('Expiration: '.length)
 
   const expiration = Date.parse(expirationString)
 
@@ -427,16 +361,11 @@ async function isValidEIP1654Message(
     throw new Error('Missing provider')
   }
   const requestManager = new RequestManager(provider)
-  const signatureValidator = await SignatureValidator(
-    requestManager,
-    contractAddress
-  )
+  const signatureValidator = await SignatureValidator(requestManager, contractAddress)
 
   const hashedMessage = Authenticator.createEIP1271MessageHash(message)
   const _signature = hexToBytes(signature)
-  let result = bytesToHex(
-    await signatureValidator.isValidSignature(hashedMessage, _signature)
-  )
+  let result = bytesToHex(await signatureValidator.isValidSignature(hashedMessage, _signature))
 
   if (result === ERC1654_MAGIC_VALUE) {
     return true
@@ -444,18 +373,9 @@ async function isValidEIP1654Message(
     // check based on the dateToValidateExpirationInMillis
     const dater = new Blocks(requestManager)
     try {
-      const { block } = await dater.getDate(
-        dateToValidateExpirationInMillis,
-        false
-      )
+      const { block } = await dater.getDate(dateToValidateExpirationInMillis, false)
 
-      result = bytesToHex(
-        await signatureValidator.isValidSignature(
-          hashedMessage,
-          _signature,
-          block
-        )
-      )
+      result = bytesToHex(await signatureValidator.isValidSignature(hashedMessage, _signature, block))
     } catch (e) {
       throw new Error(`Invalid validation. Error: ${e.message}`)
     }
@@ -464,9 +384,7 @@ async function isValidEIP1654Message(
       return true
     }
 
-    throw new Error(
-      `Invalid validation. Expected: ${ERC1654_MAGIC_VALUE}. Actual: ${result}`
-    )
+    throw new Error(`Invalid validation. Expected: ${ERC1654_MAGIC_VALUE}. Actual: ${result}`)
   }
   return false
 }
