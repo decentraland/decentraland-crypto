@@ -3,12 +3,7 @@ import { Authenticator } from '../src/Authenticator'
 import { createIdentity } from 'eth-crypto'
 import { bytesToHex, utf8ToBytes } from 'ethereum-cryptography/utils'
 import { keccak256 } from 'ethereum-cryptography/keccak'
-import {
-  ethSign,
-  recoverAddressFromEthSignature,
-  recoverPublicKey,
-  sign
-} from '../src/crypto'
+import { ethSign, recoverAddressFromEthSignature, recoverPublicKey, sign } from '../src/crypto'
 
 describe('eth-crypto', function () {
   it('sanity: recovers a signature', async () => {
@@ -31,21 +26,13 @@ describe('eth-crypto', function () {
     const realAccount = createIdentity()
     const message = 'test'
 
-    const authChain = Authenticator.createAuthChain(
-      realAccount,
-      ephemeralIdentity,
-      10,
-      message
-    )
+    const authChain = Authenticator.createAuthChain(realAccount, ephemeralIdentity, 10, message)
 
     expect(authChain[0].type).toEqual('SIGNER')
     expect(authChain[0].payload).toEqual(realAccount.address)
 
     expect(authChain[1].type).toEqual('ECDSA_EPHEMERAL')
-    const recovered = recoverAddressFromEthSignature(
-      authChain[1].signature ?? '',
-      authChain[1].payload
-    )
+    const recovered = recoverAddressFromEthSignature(authChain[1].signature ?? '', authChain[1].payload)
     expect(recovered).toEqual(realAccount.address)
     expect(authChain.length).toEqual(3)
   })
