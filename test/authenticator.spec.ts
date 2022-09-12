@@ -165,13 +165,13 @@ describe('Decentraland Crypto', function () {
     it('should validate simple signatures :: EIP 1654 :: Ethereum Message Prefix', async function () {
       // Date.now() should return 0 to avoid expiration
       jest.useFakeTimers().setSystemTime(0)
-      const ephemeral = '0x8eBB962819ab2871EAf7cc5D678281Bab77a0cAc'
-      const authority = '0xe6725de10ad175790278debb0113b94be09aae40'
+      const ephemeral = '0xD8364d36F41f3B609a32e204f12D168Eb1d1a00b'
+      const authority = '0xe30bb5d5ed06f3871e084ebd5e6e5f17edd91dfc'
       const authLink = {
         type: AuthLinkType.ECDSA_EIP_1654_EPHEMERAL,
-        payload: `Decentraland Login\nEphemeral address: 0x8eBB962819ab2871EAf7cc5D678281Bab77a0cAc\nExpiration: 2022-09-19T14:41:03.996Z`,
+        payload: `Decentraland Login\nEphemeral address: 0xD8364d36F41f3B609a32e204f12D168Eb1d1a00b\nExpiration: 2022-09-19T17:19:24.189Z`,
         signature:
-          '0x000501021292501fac2c9c66388efca9766ee1cccb39fdf10002a115570bf52988587e2dab15a2bcc018035ef0a04d0ec60a309fb2cde842cbcb51162307dc064a20a8bee38275c1071a910a44aa0b951c49b413697e6392718c1b020203596af90cecdbf9a768886e771178fd5561dd27ab005d0001000188221415cd42ae98c2470f40bef512f667b7b22d8854b2d35a427e420bcfc63725ef2f8613a1a018019608283f08b16880f847f3c5f7eae2068ed0727d7b0c071b020101c50adeadb7fe15bee45dcb820610cdedcd314eb00301035aa25938014416502db007c62d01067e98d9d896'
+          '0x00050203596af90cecdbf9a768886e771178fd5561dd27ab005d000100015d12fd67a4ff8471c6d470a832284ddb174aec800fb9191cb01b256bc29b7c225c3d8540ada581c9b60db6a21ba91552077064332a3b6cfeef4a2a20366cdd901b020101c50adeadb7fe15bee45dcb820610cdedcd314eb0030103a4f4b20984c8883624883ac565a64eaf2bdf4af800021587152542de4f8c3699309ad89f711f0f016a852d448d51c5d0e8b40eb623176239225dbcfd595505adf9bebcc463038d086f84d87fa301aa7c45845d5dd67e1c02'
       }
 
       const result = await ECDSA_EIP_1654_EPHEMERAL_VALIDATOR(authority, authLink, {
