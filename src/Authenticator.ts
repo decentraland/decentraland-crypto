@@ -349,14 +349,20 @@ export function parseEmphemeralPayload(payload: string): {
   return { message, ephemeralAddress, expiration }
 }
 
-export async function isValidEIP1271Signature(signatureValidator: SignatureValidator, message: string, signature: string, block?: number): Promise<boolean> {
+export async function isValidEIP1271Signature(
+  signatureValidator: SignatureValidator,
+  message: string,
+  signature: string,
+  block?: number
+): Promise<boolean> {
   const hashedMessage = Authenticator.createEIP1271MessageHash(message)
   const _signature = hexToBytes(signature)
   let result
 
   try {
     result = bytesToHex(await signatureValidator.isValidSignature(hashedMessage, _signature, block))
-  } catch (e) {  // Can revert if the signature is not valid
+  } catch (e) {
+    // Can revert if the signature is not valid
   }
 
   if (result === ERC1654_MAGIC_VALUE) {
@@ -366,7 +372,8 @@ export async function isValidEIP1271Signature(signatureValidator: SignatureValid
   const hashedMessageWithPrefix = utilsCreateEthereumMessage(message)
   try {
     result = bytesToHex(await signatureValidator.isValidSignature(hashedMessageWithPrefix, _signature, block))
-  } catch (e) {  // Can revert if the signature is not valid
+  } catch (e) {
+    // Can revert if the signature is not valid
   }
 
   return result === ERC1654_MAGIC_VALUE
@@ -379,8 +386,6 @@ async function isValidEIP1654Message(
   signature: string,
   dateToValidateExpirationInMillis: number
 ) {
-
-
   if (!provider) {
     throw new Error('Missing provider')
   }
