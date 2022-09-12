@@ -13,6 +13,7 @@ import {
 import { moveMinutes } from './helper/utils'
 import Blocks from './helper/blocks'
 import {
+  createEthereumMessageHash,
   createEthereumMessageHash as utilsCreateEthereumMessage,
   ethSign,
   recoverAddressFromEthSignature
@@ -347,6 +348,20 @@ export function parseEmphemeralPayload(payload: string): {
   return { message, ephemeralAddress, expiration }
 }
 
+export async function validateEIP1271Signature(signatureValidator: SignatureValidator, message: string, signature: string, block?: number): Promise<string> {
+  const hashedMessage = Authenticator.createEIP1271MessageHash(message)
+  const _signature = hexToBytes(signature)
+  let result
+  try {
+    result = bytesToHex(await signatureValidator.isValidSignature(hashedMessage, _signature, block))
+  } catch (e) {
+    // Can revert if the signature is not valid
+    const hashedMessageWithPrefix = createEthereumMessageHash(message)
+    result = bytesToHex(await signatureValidator.isValidSignature(hashedMessageWithPrefix, _signature, block))
+  }
+  return result
+}
+
 async function isValidEIP1654Message(
   provider: any | undefined,
   contractAddress: string,
@@ -363,9 +378,7 @@ async function isValidEIP1654Message(
   const requestManager = new RequestManager(provider)
   const signatureValidator = await SignatureValidator(requestManager, contractAddress)
 
-  const hashedMessage = Authenticator.createEIP1271MessageHash(message)
-  const _signature = hexToBytes(signature)
-  let result = bytesToHex(await signatureValidator.isValidSignature(hashedMessage, _signature))
+  let result = await validateEIP1271Signature(signatureValidator, message, signature)
 
   if (result === ERC1654_MAGIC_VALUE) {
     return true
@@ -375,7 +388,7 @@ async function isValidEIP1654Message(
     try {
       const { block } = await dater.getDate(dateToValidateExpirationInMillis, false)
 
-      result = bytesToHex(await signatureValidator.isValidSignature(hashedMessage, _signature, block))
+      result = await validateEIP1271Signature(signatureValidator, message, signature, block)
     } catch (e) {
       throw new Error(`Invalid validation. Error: ${e.message}`)
     }
