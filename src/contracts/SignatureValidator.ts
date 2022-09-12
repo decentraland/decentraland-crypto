@@ -1,6 +1,6 @@
 import RequestManager, { AbiItem, Contract, ContractFactory } from 'eth-connect'
 
-type SignatureValidator = Contract & {
+export type SignatureValidator = Contract & {
   isValidSignature(hash: Uint8Array, signature: Uint8Array, block?: string | number): Promise<Uint8Array>
 }
 

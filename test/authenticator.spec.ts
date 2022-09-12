@@ -162,6 +162,29 @@ describe('Decentraland Crypto', function () {
       expect(result.ok).toEqual(true)
     })
 
+    it('should validate simple signatures :: EIP 1654 :: Ethereum Message Prefix', async function () {
+      // Date.now() should return 0 to avoid expiration
+      jest.useFakeTimers().setSystemTime(0)
+      const ephemeral = '0xD8364d36F41f3B609a32e204f12D168Eb1d1a00b'
+      const authority = '0xe30bb5d5ed06f3871e084ebd5e6e5f17edd91dfc'
+      const authLink = {
+        type: AuthLinkType.ECDSA_EIP_1654_EPHEMERAL,
+        payload: `Decentraland Login\nEphemeral address: 0xD8364d36F41f3B609a32e204f12D168Eb1d1a00b\nExpiration: 2022-09-19T17:19:24.189Z`,
+        signature:
+          '0x00050203596af90cecdbf9a768886e771178fd5561dd27ab005d000100015d12fd67a4ff8471c6d470a832284ddb174aec800fb9191cb01b256bc29b7c225c3d8540ada581c9b60db6a21ba91552077064332a3b6cfeef4a2a20366cdd901b020101c50adeadb7fe15bee45dcb820610cdedcd314eb0030103a4f4b20984c8883624883ac565a64eaf2bdf4af800021587152542de4f8c3699309ad89f711f0f016a852d448d51c5d0e8b40eb623176239225dbcfd595505adf9bebcc463038d086f84d87fa301aa7c45845d5dd67e1c02'
+      }
+
+      const result = await ECDSA_EIP_1654_EPHEMERAL_VALIDATOR(authority, authLink, {
+        provider: mainnetProvider,
+        dateToValidateExpirationInMillis: Date.now()
+      })
+
+      // Restore
+      jest.useRealTimers()
+
+      expect(result.nextAuthority).toEqual(ephemeral)
+    })
+
     it('should support /r :: EIP 1654', async function () {
       // Date.now() should return 0 to avoid expiration
       jest.useFakeTimers().setSystemTime(0)

@@ -19,6 +19,8 @@ import {
 } from './crypto'
 
 export const VALID_SIGNATURE: string = 'VALID_SIGNATURE'
+// bytes4(keccak256("isValidSignature(bytes32,bytes)")
+export const ERC1654_MAGIC_VALUE = '1626ba7e'
 
 const PERSONAL_SIGNATURE_LENGTH = 132
 
@@ -347,6 +349,36 @@ export function parseEmphemeralPayload(payload: string): {
   return { message, ephemeralAddress, expiration }
 }
 
+export async function isValidEIP1271Signature(
+  signatureValidator: SignatureValidator,
+  message: string,
+  signature: string,
+  block?: number
+): Promise<boolean> {
+  const hashedMessage = Authenticator.createEIP1271MessageHash(message)
+  const _signature = hexToBytes(signature)
+  let result
+
+  try {
+    result = bytesToHex(await signatureValidator.isValidSignature(hashedMessage, _signature, block))
+  } catch (e) {
+    // Can revert if the signature is not valid
+  }
+
+  if (result === ERC1654_MAGIC_VALUE) {
+    return true
+  }
+
+  const hashedMessageWithPrefix = utilsCreateEthereumMessage(message)
+  try {
+    result = bytesToHex(await signatureValidator.isValidSignature(hashedMessageWithPrefix, _signature, block))
+  } catch (e) {
+    // Can revert if the signature is not valid
+  }
+
+  return result === ERC1654_MAGIC_VALUE
+}
+
 async function isValidEIP1654Message(
   provider: any | undefined,
   contractAddress: string,
@@ -354,39 +386,33 @@ async function isValidEIP1654Message(
   signature: string,
   dateToValidateExpirationInMillis: number
 ) {
-  // bytes4(keccak256("isValidSignature(bytes32,bytes)")
-  const ERC1654_MAGIC_VALUE = '1626ba7e'
-
   if (!provider) {
     throw new Error('Missing provider')
   }
   const requestManager = new RequestManager(provider)
   const signatureValidator = await SignatureValidator(requestManager, contractAddress)
 
-  const hashedMessage = Authenticator.createEIP1271MessageHash(message)
-  const _signature = hexToBytes(signature)
-  let result = bytesToHex(await signatureValidator.isValidSignature(hashedMessage, _signature))
+  let result = await isValidEIP1271Signature(signatureValidator, message, signature)
 
-  if (result === ERC1654_MAGIC_VALUE) {
+  if (result) {
     return true
-  } else {
-    // check based on the dateToValidateExpirationInMillis
-    const dater = new Blocks(requestManager)
-    try {
-      const { block } = await dater.getDate(dateToValidateExpirationInMillis, false)
+  }
 
-      result = bytesToHex(await signatureValidator.isValidSignature(hashedMessage, _signature, block))
-    } catch (e) {
-      throw new Error(`Invalid validation. Error: ${e.message}`)
-    }
+  // check based on the dateToValidateExpirationInMillis
+  const dater = new Blocks(requestManager)
+  try {
+    const { block } = await dater.getDate(dateToValidateExpirationInMillis, false)
 
-    if (result === ERC1654_MAGIC_VALUE) {
+    result = await isValidEIP1271Signature(signatureValidator, message, signature, block)
+
+    if (result) {
       return true
     }
-
-    throw new Error(`Invalid validation. Expected: ${ERC1654_MAGIC_VALUE}. Actual: ${result}`)
+  } catch (e) {
+    throw new Error(`Invalid validation. Error: ${e.message}`)
   }
-  return false
+
+  throw new Error(`Invalid validation. Expected: ${ERC1654_MAGIC_VALUE}. Actual: ${result}`)
 }
 
 function getValidatorByType(type: AuthLinkType): ValidatorType {
