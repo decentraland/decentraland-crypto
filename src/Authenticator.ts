@@ -13,7 +13,6 @@ import {
 import { moveMinutes } from './helper/utils'
 import Blocks from './helper/blocks'
 import {
-  createEthereumMessageHash,
   createEthereumMessageHash as utilsCreateEthereumMessage,
   ethSign,
   recoverAddressFromEthSignature
@@ -356,7 +355,7 @@ export async function validateEIP1271Signature(signatureValidator: SignatureVali
     result = bytesToHex(await signatureValidator.isValidSignature(hashedMessage, _signature, block))
   } catch (e) {
     // Can revert if the signature is not valid
-    const hashedMessageWithPrefix = createEthereumMessageHash(message)
+    const hashedMessageWithPrefix = utilsCreateEthereumMessage(message)
     result = bytesToHex(await signatureValidator.isValidSignature(hashedMessageWithPrefix, _signature, block))
   }
   return result
