@@ -176,7 +176,7 @@ describe('Decentraland Crypto', function () {
 
       const result = await ECDSA_EIP_1654_EPHEMERAL_VALIDATOR(authority, authLink, {
         provider: mainnetProvider,
-        dateToValidateExpirationInMillis: Date.now()
+        dateToValidateExpirationInMillis: 1663082280997
       })
 
       // Restore
