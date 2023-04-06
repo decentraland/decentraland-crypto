@@ -21,6 +21,7 @@ import {
 export const VALID_SIGNATURE: string = 'VALID_SIGNATURE'
 // bytes4(keccak256("isValidSignature(bytes32,bytes)")
 export const ERC1654_MAGIC_VALUE = '1626ba7e'
+export const EPHEMERAL_EXPIRATION_REGEX = /^\d{4,4}-\d{1,2}-\d{1,2}T\d{1,2}:\d{1,2}:\d{1,2}(\.\d{1,3})?Z$/gi
 
 const PERSONAL_SIGNATURE_LENGTH = 132
 
@@ -343,6 +344,10 @@ export function parseEmphemeralPayload(payload: string): {
   const payloadParts: string[] = message.split('\n')
   const ephemeralAddress: string = payloadParts[1].substring('Ephemeral address: '.length)
   const expirationString: string = payloadParts[2].substring('Expiration: '.length)
+
+  if (!EPHEMERAL_EXPIRATION_REGEX.test(expirationString)) {
+    throw new Error(`Invalid Ephemeral. 'expiration' must follow the ISO 8601 format (YYYY-MM-DDTHH:mm:ss[.sss]Z)`)
+  }
 
   const expiration = Date.parse(expirationString)
 
