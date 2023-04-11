@@ -349,7 +349,9 @@ export function parseEmphemeralPayload(payload: string): {
   const expirationString: string = payloadParts[2].substring('Expiration: '.length)
 
   if (!new RegExp(EPHEMERAL_EXPIRATION_REGEX).test(expirationString)) {
-    throw new Error(`Invalid Ephemeral. 'expiration' must follow the ISO 8601 format (YYYY-MM-DDTHH:mm:ss[.sss]Z), but found: ${expirationString}`)
+    throw new Error(
+      `Invalid Ephemeral. 'expiration' must follow the ISO 8601 format (YYYY-MM-DDTHH:mm:ss[.sss]Z), but found: ${expirationString}`
+    )
   }
 
   const expiration = Date.parse(expirationString)
