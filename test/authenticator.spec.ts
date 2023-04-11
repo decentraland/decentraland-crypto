@@ -18,7 +18,7 @@ mainnetProvider.debug = true
 const PERSONAL_SIGNATURE =
   '0x49c5d57fc804e6a06f83ee8d499aec293a84328766864d96349db599ef9ebacc072892ec1f3e2777bdc8265b53d8b84edd646bdc711dd5290c18adcc5de4a2831b'
 const CONTRACT_WALLET_SIGNATURE =
-  '0xea441043d745d130e8a2560d7c5e8a9e9d9dae8530015f3bd90eaea5040c81ca419a2a2f29c48439985a58fa7aa7b4bb06e4111a054bfa8095b65b2f3c1ecae41ccdb959d51dda310325d0294cf6a9f0691d08abfb9978d4f2e7e504042b663ef2123712bf864ef161cf579c4b3e3faf3767865a5bb4535d9fc2b9f6664e403d241b'
+  '0x00050203596af90cecdbf9a768886e771178fd5561dd27ab005d000100019dde76f11e2c6aff01f6548f3046a9d0c569e13e79dec4218322068d3123e1162167fabd84dccfaabd350b93d2405f7b8a9cef4846b4d9a55d17838809a0e2591b020101c50adeadb7fe15bee45dcb820610cdedcd314eb0030102640dccefda3685e6c0dbeb70c1cf8018c27077eb00021cfbe892a1b29ac5e2fda1038c7965656be94aec57b658582f16447089bcf50b09df216a7e21d861cd7474723a7bfc70bf1caa55a962476cf78eb4b54471018b1b020103d9e87370ededc599df3bf9dd0e48586005f1a1bb'
 
 describe('Decentraland Crypto', function () {
   jest.setTimeout(999999)
@@ -45,21 +45,18 @@ describe('Decentraland Crypto', function () {
       const chain: AuthChain = [
         {
           type: AuthLinkType.SIGNER,
-          payload: '0x3b21028719a4aca7ebee35b0157a6f1b0cf0d0c5',
+          payload: '0x8C889222833F961FC991B31d15e25738c6732930',
           signature: ''
         },
         {
           type: AuthLinkType.ECDSA_EIP_1654_EPHEMERAL,
-          payload:
-            'Decentraland Login\nEphemeral address: 0x69fBdE5Da06eb76e8E7F6Fd2FEEd968F28b951a5\nExpiration: Tue Aug 06 7112 10:14:51 GMT-0300 (Argentina Standard Time)',
-          signature:
-            '0x03524dbe44d19aacc8162b4d5d17820c370872de7bfd25d1add2b842adb1de546b454fc973b6d215883c30f4c21774ae71683869317d773f27e6bfaa9a2a05101b36946c3444914bb93f17a29d88e2449bcafdb6478b4835102c522197fa6f63d13ce5ab1d5c11c95db0c210fb4380995dff672392e5569c86d7c6bb2a44c53a151c'
+          payload: 'Decentraland Login\nEphemeral address: 0x4A1b9FD363dE915145008C41FA217377B2C223F2\nExpiration: 2123-03-18T16:59:36.515Z',
+          signature: '0x00050203596af90cecdbf9a768886e771178fd5561dd27ab005d000100019dde76f11e2c6aff01f6548f3046a9d0c569e13e79dec4218322068d3123e1162167fabd84dccfaabd350b93d2405f7b8a9cef4846b4d9a55d17838809a0e2591b020101c50adeadb7fe15bee45dcb820610cdedcd314eb0030102640dccefda3685e6c0dbeb70c1cf8018c27077eb00021cfbe892a1b29ac5e2fda1038c7965656be94aec57b658582f16447089bcf50b09df216a7e21d861cd7474723a7bfc70bf1caa55a962476cf78eb4b54471018b1b020103d9e87370ededc599df3bf9dd0e48586005f1a1bb'
         },
         {
           type: AuthLinkType.ECDSA_PERSONAL_SIGNED_ENTITY,
           payload: 'QmUsqJaHc5HQaBrojhBdjF4fr5MQc6CqhwZjqwhVRftNAo',
-          signature:
-            '0xd73b0315dd39080d9b6d1a613a56732a75d68d2cef2a38f3b7be12bdab3c59830c92c6bdf394dcb47ba1aa736e0338cf9112c9eee59dbe4109b8af6a993b12d71b'
+          signature: '0xb962b57accc8e12083769339888f82752d13f280012b2c7b2aa2722eae103aea7a623dc88605bf7036ec8c23b0bb8f036b52f5e4e30ee913f6f2a077d5e5e3e01b'
         }
       ]
 
@@ -79,29 +76,26 @@ describe('Decentraland Crypto', function () {
       const chain: AuthChain = [
         {
           type: AuthLinkType.SIGNER,
-          payload: '0x49D4480d1F82E642Fc5697A8ba42f1065cA0f31E',
+          payload: '0x8C889222833F961FC991B31d15e25738c6732930',
           signature: ''
         },
         {
           type: AuthLinkType.ECDSA_EIP_1654_EPHEMERAL,
-          payload:
-            'Decentraland Login\nEphemeral address: 0x390Be489333A19608634B1fBd5434129786Ab1E1\nExpiration: 2020-02-21T11:37:38.686Z',
-          signature:
-            '0xbef29294f9e5ad138824d7dc78baf4c5ca2d15d5fe39ea8c80c29463d3a8dafc362a61f5cd34cbe7a2a68d1ca6062331b9b2ff01db31c1c95bdc42454ce7c6da1cdca27f6f34993fe3e31273dfcd4070c005a7448e8971c259441b206d6b0dab4f11c14a31de529fa59f2a326321f5100fbb0ace11250457e3f3f731367529204c1c'
+          payload: 'Decentraland Login\nEphemeral address: 0x4A1b9FD363dE915145008C41FA217377B2C223F2\nExpiration: 2123-03-18T16:59:36.515Z',
+          signature: '0x00050203596af90cecdbf9a768886e771178fd5561dd27ab005d000100019dde76f11e2c6aff01f6548f3046a9d0c569e13e79dec4218322068d3123e1162167fabd84dccfaabd350b93d2405f7b8a9cef4846b4d9a55d17838809a0e2591b020101c50adeadb7fe15bee45dcb820610cdedcd314eb0030102640dccefda3685e6c0dbeb70c1cf8018c27077eb00021cfbe892a1b29ac5e2fda1038c7965656be94aec57b658582f16447089bcf50b09df216a7e21d861cd7474723a7bfc70bf1caa55a962476cf78eb4b54471018b1b020103d9e87370ededc599df3bf9dd0e48586005f1a1bb'
         },
         {
           type: AuthLinkType.ECDSA_PERSONAL_SIGNED_ENTITY,
-          payload: 'QmXXYddXKWVGFMEgtGoPMCu6dbJ35TyYR4AkDHw9mUc1s1',
-          signature:
-            '0xd125495751f34c973b86a76ea243fba5aa91bd3eb9eb38a45112c83dd0a5efd633dade4a71a6a3a48dc20224684b86621f2ac0c3f1b803af2963bec5fa407f3b1b'
+          payload: 'QmUsqJaHc5HQaBrojhBdjF4fr5MQc6CqhwZjqwhVRftNAo',
+          signature: '0xb962b57accc8e12083769339888f82752d13f280012b2c7b2aa2722eae103aea7a623dc88605bf7036ec8c23b0bb8f036b52f5e4e30ee913f6f2a077d5e5e3e01b'
         }
       ]
 
       const result = await Authenticator.validateSignature(
-        'QmXXYddXKWVGFMEgtGoPMCu6dbJ35TyYR4AkDHw9mUc1s1',
+        'QmUsqJaHc5HQaBrojhBdjF4fr5MQc6CqhwZjqwhVRftNAo',
         chain,
         mainnetProvider,
-        1581680328512 // time when deployed
+        1681189103000 // time when deployed
       )
 
       expect(result.ok).toEqual(true)
@@ -110,11 +104,11 @@ describe('Decentraland Crypto', function () {
     it('should validate a signature :: EIP 1654', async function () {
       // Date.now() should return 0 to avoid expiration
       jest.useFakeTimers().setSystemTime(0)
-      const ephemeral = '0x1F19d3EC0BE294f913967364c1D5B416e6A74555'
-      const authority = '0x3B21028719a4ACa7EBee35B0157a6F1B0cF0d0c5'
+      const ephemeral = '0x4A1b9FD363dE915145008C41FA217377B2C223F2'
+      const authority = '0x8C889222833F961FC991B31d15e25738c6732930'
       const authLink = {
         type: AuthLinkType.ECDSA_EIP_1654_EPHEMERAL,
-        payload: `Decentraland Login\nEphemeral address: ${ephemeral}\nExpiration: Tue Jan 21 2020 16:34:32 GMT+0000 (Coordinated Universal Time)`,
+        payload: `Decentraland Login\nEphemeral address: ${ephemeral}\nExpiration: 2123-03-18T16:59:36.515Z`,
         signature: CONTRACT_WALLET_SIGNATURE
       }
 
@@ -169,7 +163,7 @@ describe('Decentraland Crypto', function () {
       const authority = '0xe30bb5d5ed06f3871e084ebd5e6e5f17edd91dfc'
       const authLink = {
         type: AuthLinkType.ECDSA_EIP_1654_EPHEMERAL,
-        payload: `Decentraland Login\nEphemeral address: 0xD8364d36F41f3B609a32e204f12D168Eb1d1a00b\nExpiration: 2022-09-19T17:19:24.189Z`,
+        payload: `Decentraland Login\nEphemeral address: ${ephemeral}\nExpiration: 2022-09-19T17:19:24.189Z`,
         signature:
           '0x00050203596af90cecdbf9a768886e771178fd5561dd27ab005d000100015d12fd67a4ff8471c6d470a832284ddb174aec800fb9191cb01b256bc29b7c225c3d8540ada581c9b60db6a21ba91552077064332a3b6cfeef4a2a20366cdd901b020101c50adeadb7fe15bee45dcb820610cdedcd314eb0030103a4f4b20984c8883624883ac565a64eaf2bdf4af800021587152542de4f8c3699309ad89f711f0f016a852d448d51c5d0e8b40eb623176239225dbcfd595505adf9bebcc463038d086f84d87fa301aa7c45845d5dd67e1c02'
       }
@@ -188,11 +182,11 @@ describe('Decentraland Crypto', function () {
     it('should support /r :: EIP 1654', async function () {
       // Date.now() should return 0 to avoid expiration
       jest.useFakeTimers().setSystemTime(0)
-      const ephemeral = '0x1F19d3EC0BE294f913967364c1D5B416e6A74555'
-      const authority = '0x3B21028719a4ACa7EBee35B0157a6F1B0cF0d0c5'
+      const ephemeral = '0x4A1b9FD363dE915145008C41FA217377B2C223F2'
+      const authority = '0x8C889222833F961FC991B31d15e25738c6732930'
       const authLink = {
         type: AuthLinkType.ECDSA_EIP_1654_EPHEMERAL,
-        payload: `Decentraland Login\r\nEphemeral address: ${ephemeral}\r\nExpiration: Tue Jan 21 2020 16:34:32 GMT+0000 (Coordinated Universal Time)`,
+        payload: `Decentraland Login\r\nEphemeral address: 0x4A1b9FD363dE915145008C41FA217377B2C223F2\r\nExpiration: 2123-03-18T16:59:36.515Z`,
         signature: CONTRACT_WALLET_SIGNATURE
       }
 
@@ -301,6 +295,7 @@ describe('Decentraland Crypto', function () {
       const identity = EthCrypto.createIdentity()
       const ephemeral = EthCrypto.createIdentity()
       const chain = Authenticator.createAuthChain(identity, ephemeral, -5, 'message')
+      console.log('expiration check can be configured', JSON.stringify(chain, null, 2))
 
       // Since the ephemeral expired 5 minutes ago, validation should fail
       let result = await Authenticator.validateSignature('message', chain, mainnetProvider)
