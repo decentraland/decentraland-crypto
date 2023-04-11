@@ -301,7 +301,6 @@ describe('Decentraland Crypto', function () {
       const identity = EthCrypto.createIdentity()
       const ephemeral = EthCrypto.createIdentity()
       const chain = Authenticator.createAuthChain(identity, ephemeral, -5, 'message')
-      console.log('expiration check can be configured', JSON.stringify(chain, null, 2))
 
       // Since the ephemeral expired 5 minutes ago, validation should fail
       let result = await Authenticator.validateSignature('message', chain, mainnetProvider)
