@@ -11,7 +11,7 @@ import {
 import { AuthLinkType, AuthChain } from '../src/types'
 import { moveMinutes } from '../src/helper/utils'
 
-const mainnetProvider = new HTTPProvider('https://rpc.decentraland.org/mainnet?project=dcl-crypto-ci', { fetch: fetch })
+const mainnetProvider = new HTTPProvider(process.env.ETHEREUM_MAINNET_RPC || '', { fetch: fetch })
 
 mainnetProvider.debug = true
 
