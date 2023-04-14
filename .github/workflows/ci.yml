@@ -23,6 +23,8 @@ jobs:
         run:  npm run build
       - name: test
         run:  npm run test
+        env:
+          ETHEREUM_MAINNET_RPC: ${{ secrets.ETHEREUM_MAINNET_RPC }}
       - name: lint
         run:  npm run lint
       - name: benchmark

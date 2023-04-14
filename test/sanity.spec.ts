@@ -4,7 +4,7 @@ import { Authenticator } from '../src/Authenticator'
 import { AuthLinkType, AuthChain } from '../src/types'
 import { recoverAddressFromEthSignature } from '../src/crypto'
 
-const mainnetProvider = new HTTPProvider('https://rpc.decentraland.org/mainnet?project=dcl-crypto-ci', {
+const mainnetProvider = new HTTPProvider(process.env.ETHEREUM_MAINNET_RPC || '', {
   fetch: fetch as any
 })
 
