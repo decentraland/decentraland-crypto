@@ -1,4 +1,4 @@
-import { bytesToHex, concatBytes, getAddress, hexToBytes, isHex, sha3, stringToUtf8Bytes, toHex } from 'eth-connect'
+import { bytesToHex, concatBytes, getAddress, hexToBytes, isHex, sha3, stringToUtf8Bytes } from 'eth-connect'
 import { secp256k1 } from 'ethereum-cryptography/secp256k1'
 
 /**
