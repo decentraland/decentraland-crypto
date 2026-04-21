@@ -9,8 +9,12 @@ const mainnetProvider = new HTTPProvider(process.env.ETHEREUM_MAINNET_RPC || '',
 })
 
 describe('Sanity', function () {
-  it('Should work with production example', async function () {
-    jest.useFakeTimers().setSystemTime(0)
+  afterEach(() => {
+    jest.useRealTimers()
+  })
+
+  it('should validate a production auth chain', async function () {
+    jest.useFakeTimers({ doNotFake: ['performance'] }).setSystemTime(0)
     const chain: AuthChain = [
       {
         type: AuthLinkType.SIGNER,
@@ -37,9 +41,6 @@ describe('Sanity', function () {
       chain,
       mainnetProvider
     )
-
-    // Restore
-    jest.useRealTimers()
 
     expect(result).toEqual({ ok: true, message: undefined })
   })

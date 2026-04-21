@@ -26,20 +26,26 @@ const prodAuthChain: AuthChain = [
 ]
 
 describe('Crypto utils', function () {
-  it('recovers a signature', async () => {
-    const identity = createUnsafeIdentity()
-    const hash = keccak256(utf8ToBytes('test'))
-    const signature = sign(hexToBytes(identity.privateKey), hash)
-    const recoveredPub = recoverPublicKey(hexToBytes(signature), hash)
-    expect(bytesToHex(recoveredPub)).toEqual(identity.publicKey)
+  describe('when recovering a signature from a key pair and hash', () => {
+    it('should recover the original public key', async () => {
+      const identity = createUnsafeIdentity()
+      const hash = keccak256(utf8ToBytes('test'))
+      const signature = sign(hexToBytes(identity.privateKey), hash)
+      const recoveredPub = recoverPublicKey(hexToBytes(signature), hash)
+      expect(bytesToHex(recoveredPub)).toEqual(identity.publicKey)
+    })
   })
-  it('recovers a the key correctly 1', async () => {
-    const recovered = recoverAddressFromEthSignature(prodAuthChain[1].signature ?? '', prodAuthChain[1].payload)
-    expect(recovered.toLowerCase()).toEqual(prodAuthChain[0].payload.toLowerCase())
-  })
-  it('recovers a the key correctly 2', async () => {
-    const recovered = recoverAddressFromEthSignature(prodAuthChain[2].signature ?? '', prodAuthChain[2].payload)
-    expect(recovered.toLowerCase()).toEqual('0x05Ac0D29E42F9ae09B0EfA250BD3385FC3D0a68B'.toLowerCase())
+
+  describe('when recovering addresses from a production auth chain', () => {
+    it('should recover the signer address from the ephemeral link', async () => {
+      const recovered = recoverAddressFromEthSignature(prodAuthChain[1].signature ?? '', prodAuthChain[1].payload)
+      expect(recovered.toLowerCase()).toEqual(prodAuthChain[0].payload.toLowerCase())
+    })
+
+    it('should recover the ephemeral address from the signed entity link', async () => {
+      const recovered = recoverAddressFromEthSignature(prodAuthChain[2].signature ?? '', prodAuthChain[2].payload)
+      expect(recovered.toLowerCase()).toEqual('0x05Ac0D29E42F9ae09B0EfA250BD3385FC3D0a68B'.toLowerCase())
+    })
   })
 
   const tests = [
@@ -67,26 +73,18 @@ describe('Crypto utils', function () {
   ] as const
 
   tests.forEach((test, ix) => {
-    describe('test the sign function ' + ix, () => {
-      it('sign data using a string', () => {
+    describe(`when signing and recovering test vector ${ix}`, () => {
+      it('should produce the expected signature', () => {
         const signature = ethSign(test.privateKey, test.data)
-
         expect(signature).toEqual(test.signature)
       })
 
-      it('sign data using a utf8 encoded hex string', () => {
-        const sig = ethSign(test.privateKey, test.data)
-
-        expect(sig).toEqual(test.signature)
+      it('should recover the correct address from the signature bytes', () => {
+        const address = recoverAddressFromEthSignature(hexToBytes(test.signature), test.data)
+        expect(address).toEqual(test.address)
       })
 
-      it('recover signature using a string', () => {
-        const address1 = recoverAddressFromEthSignature(hexToBytes(test.signature), test.data)
-
-        expect(address1).toEqual(test.address)
-      })
-
-      it('recover signature (pre encoded)', () => {
+      it('should recover the correct address from a sign-then-recover round trip', () => {
         const sig = ethSign(test.privateKey, test.data)
         const address = recoverAddressFromEthSignature(sig, test.data)
         expect(address).toEqual(test.address)
@@ -94,24 +92,36 @@ describe('Crypto utils', function () {
     })
   })
 
-  it('initializeAuthChain with mock signature', async () => {
-    const ephemeralIdentity = createUnsafeIdentity()
-    const realAccount = createUnsafeIdentity()
+  describe('when initializing an auth chain with a mock signer', () => {
+    let ephemeralIdentity: ReturnType<typeof createUnsafeIdentity>
+    let realAccount: ReturnType<typeof createUnsafeIdentity>
 
-    const chain = await Authenticator.initializeAuthChain(
-      realAccount.address,
-      ephemeralIdentity,
-      10,
-      async (message) => {
-        return Authenticator.createSignature(realAccount, message)
-      }
-    )
+    beforeEach(() => {
+      ephemeralIdentity = createUnsafeIdentity()
+      realAccount = createUnsafeIdentity()
+    })
 
-    expect(chain.authChain[0].type).toEqual('SIGNER')
-    expect(chain.authChain[0].payload).toEqual(realAccount.address)
+    it('should create a SIGNER link with the real account address', async () => {
+      const chain = await Authenticator.initializeAuthChain(
+        realAccount.address,
+        ephemeralIdentity,
+        10,
+        async (message) => Authenticator.createSignature(realAccount, message)
+      )
+      expect(chain.authChain[0].type).toEqual('SIGNER')
+      expect(chain.authChain[0].payload).toEqual(realAccount.address)
+    })
 
-    expect(chain.authChain[1].type).toEqual('ECDSA_EPHEMERAL')
-    const recovered = recoverAddressFromEthSignature(chain.authChain[1].signature ?? '', chain.authChain[1].payload)
-    expect(recovered).toEqual(realAccount.address)
+    it('should create an ECDSA_EPHEMERAL link signed by the real account', async () => {
+      const chain = await Authenticator.initializeAuthChain(
+        realAccount.address,
+        ephemeralIdentity,
+        10,
+        async (message) => Authenticator.createSignature(realAccount, message)
+      )
+      expect(chain.authChain[1].type).toEqual('ECDSA_EPHEMERAL')
+      const recovered = recoverAddressFromEthSignature(chain.authChain[1].signature ?? '', chain.authChain[1].payload)
+      expect(recovered).toEqual(realAccount.address)
+    })
   })
 })

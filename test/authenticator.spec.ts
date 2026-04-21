@@ -22,16 +22,23 @@ const CONTRACT_WALLET_SIGNATURE =
 
 describe('Decentraland Crypto', function () {
   jest.setTimeout(999999)
-  describe('Get signature type', function () {
-    it('should return the correct signature type', function () {
-      expect(getEphemeralSignatureType(PERSONAL_SIGNATURE)).toEqual(AuthLinkType.ECDSA_PERSONAL_EPHEMERAL)
 
+  afterEach(() => {
+    jest.useRealTimers()
+  })
+
+  describe('when getting the signature type', function () {
+    it('should identify a personal signature', function () {
+      expect(getEphemeralSignatureType(PERSONAL_SIGNATURE)).toEqual(AuthLinkType.ECDSA_PERSONAL_EPHEMERAL)
+    })
+
+    it('should identify a contract wallet signature', function () {
       expect(getEphemeralSignatureType(CONTRACT_WALLET_SIGNATURE)).toEqual(AuthLinkType.ECDSA_EIP_1654_EPHEMERAL)
     })
   })
 
-  describe('Validate Signature', function () {
-    it('should validate request :: personal sign', async function () {
+  describe('when validating signatures', function () {
+    it('should validate a personal sign auth chain', async function () {
       const identity = EthCrypto.createIdentity()
       const ephemeral = EthCrypto.createIdentity()
       const chain = Authenticator.createAuthChain(identity, ephemeral, 5, 'message')
@@ -40,8 +47,8 @@ describe('Decentraland Crypto', function () {
       expect(result).toEqual({ ok: true, message: undefined })
     })
 
-    it('should validate request :: EIP 1654', async function () {
-      jest.useFakeTimers().setSystemTime(0)
+    it('should validate an EIP 1654 auth chain', async function () {
+      jest.useFakeTimers({ doNotFake: ['performance'] }).setSystemTime(0)
       const chain: AuthChain = [
         {
           type: AuthLinkType.SIGNER,
@@ -69,13 +76,10 @@ describe('Decentraland Crypto', function () {
         mainnetProvider
       )
 
-      // Restore
-      jest.useRealTimers()
-
       expect(result.ok).toEqual(true)
     })
 
-    it('should validate request for an specific time :: EIP 1654', async function () {
+    it('should validate an EIP 1654 auth chain at a specific timestamp', async function () {
       const chain: AuthChain = [
         {
           type: AuthLinkType.SIGNER,
@@ -107,9 +111,8 @@ describe('Decentraland Crypto', function () {
       expect(result.ok).toEqual(true)
     })
 
-    it('should validate a signature :: EIP 1654', async function () {
-      // Date.now() should return 0 to avoid expiration
-      jest.useFakeTimers().setSystemTime(0)
+    it('should validate an EIP 1654 ephemeral link and return the next authority', async function () {
+      jest.useFakeTimers({ doNotFake: ['performance'] }).setSystemTime(0)
       const ephemeral = '0x1F19d3EC0BE294f913967364c1D5B416e6A74555'
       const authority = '0x3B21028719a4ACa7EBee35B0157a6F1B0cF0d0c5'
       const authLink = {
@@ -123,13 +126,10 @@ describe('Decentraland Crypto', function () {
         dateToValidateExpirationInMillis: Date.now()
       })
 
-      // Restore
-      jest.useRealTimers()
-
       expect(result.nextAuthority).toEqual(ephemeral)
     })
 
-    it('should validate simple signatures :: personal sign', async function () {
+    it('should validate a simple personal sign auth chain', async function () {
       const chain = Authenticator.createSimpleAuthChain(
         'QmWyFNeHbxXaPtUnzKvDZPpKSa4d5anZEZEFJ8TC1WgcfU',
         '0xeC6E6c0841a2bA474E92Bf42BaF76bFe80e8657C',
@@ -145,7 +145,7 @@ describe('Decentraland Crypto', function () {
       expect(result.ok).toEqual(true)
     })
 
-    it('should validate simple signatures :: EIP 1654', async function () {
+    it('should validate a simple EIP 1654 auth chain', async function () {
       const chain = Authenticator.createSimpleAuthChain(
         'QmNUd7Cyoo9CREGsACkvBrQSb3KjhWX379FVsdjTCGsTAz',
         '0x6b7d7e82c984a0F4489c722fd11906F017f57704',
@@ -162,9 +162,8 @@ describe('Decentraland Crypto', function () {
       expect(result.ok).toEqual(true)
     })
 
-    it('should validate simple signatures :: EIP 1654 :: Ethereum Message Prefix', async function () {
-      // Date.now() should return 0 to avoid expiration
-      jest.useFakeTimers().setSystemTime(0)
+    it('should validate an EIP 1654 ephemeral link with Ethereum message prefix', async function () {
+      jest.useFakeTimers({ doNotFake: ['performance'] }).setSystemTime(0)
       const ephemeral = '0xD8364d36F41f3B609a32e204f12D168Eb1d1a00b'
       const authority = '0xe30bb5d5ed06f3871e084ebd5e6e5f17edd91dfc'
       const authLink = {
@@ -179,15 +178,11 @@ describe('Decentraland Crypto', function () {
         dateToValidateExpirationInMillis: 1663082280997
       })
 
-      // Restore
-      jest.useRealTimers()
-
       expect(result.nextAuthority).toEqual(ephemeral)
     })
 
-    it('should support /r :: EIP 1654', async function () {
-      // Date.now() should return 0 to avoid expiration
-      jest.useFakeTimers().setSystemTime(0)
+    it('should support \\r\\n line endings in EIP 1654 payloads', async function () {
+      jest.useFakeTimers({ doNotFake: ['performance'] }).setSystemTime(0)
       const ephemeral = '0x1F19d3EC0BE294f913967364c1D5B416e6A74555'
       const authority = '0x3B21028719a4ACa7EBee35B0157a6F1B0cF0d0c5'
       const authLink = {
@@ -201,15 +196,11 @@ describe('Decentraland Crypto', function () {
         dateToValidateExpirationInMillis: Date.now()
       })
 
-      // Restore
-      jest.useRealTimers()
-
       expect(result.nextAuthority).toEqual(ephemeral)
     })
 
-    it('should support /r :: personal sign', async function () {
-      // Date.now() should return 0 to avoid expiration
-      jest.useFakeTimers().setSystemTime(0)
+    it('should support \\r\\n line endings in personal sign payloads', async function () {
+      jest.useFakeTimers({ doNotFake: ['performance'] }).setSystemTime(0)
       const chain: AuthChain = [
         {
           type: AuthLinkType.SIGNER,
@@ -237,15 +228,11 @@ describe('Decentraland Crypto', function () {
         mainnetProvider
       )
 
-      // Restore
-      jest.useRealTimers()
-
       expect(result.ok).toEqual(true)
     })
 
-    it('supports signature with old versions', async function () {
-      // Date.now() should return 0 to avoid expiration
-      jest.useFakeTimers().setSystemTime(0)
+    it('should validate signatures created with old library versions', async function () {
+      jest.useFakeTimers({ doNotFake: ['performance'] }).setSystemTime(0)
       const chain: AuthChain = [
         {
           type: AuthLinkType.SIGNER,
@@ -273,13 +260,10 @@ describe('Decentraland Crypto', function () {
         mainnetProvider
       )
 
-      // Restore
-      jest.useRealTimers()
-
       expect(result.ok).toEqual(true)
     })
 
-    it('reverts if signature was expired', async function () {
+    it('should throw when the ephemeral key is expired', async function () {
       const authority = '0x1f19d3ec0be294f913967364c1d5b416e6a74555'
       const authLink = {
         type: AuthLinkType.ECDSA_PERSONAL_EPHEMERAL,
@@ -287,14 +271,12 @@ describe('Decentraland Crypto', function () {
           'Decentraland Login\nEphemeral address: 0x1F19d3EC0BE294f913967364c1D5B416e6A74555\nExpiration: 2020-01-15T00:45:29.278Z',
         signature: PERSONAL_SIGNATURE
       }
-      try {
-        await ECDSA_PERSONAL_EPHEMERAL_VALIDATOR(authority, authLink, {
+      await expect(
+        ECDSA_PERSONAL_EPHEMERAL_VALIDATOR(authority, authLink, {
           provider: mainnetProvider,
           dateToValidateExpirationInMillis: Date.now()
         })
-      } catch (e) {
-        expect(e.message).toMatch('Ephemeral key expired.')
-      }
+      ).rejects.toThrow('Ephemeral key expired.')
     })
 
     it('expiration check can be configured', async function () {
@@ -313,129 +295,145 @@ describe('Decentraland Crypto', function () {
       expect(result.ok).toEqual(true)
     })
 
-    it('should validate authChain', async function () {
-      jest.useFakeTimers().setSystemTime(0)
-      const provider = mainnetProvider
-      let chain: AuthChain = [
-        {
-          type: AuthLinkType.ECDSA_EIP_1654_EPHEMERAL,
-          payload: '0xFAKEAddress',
-          signature: ''
-        },
-        {
-          type: AuthLinkType.SIGNER,
-          payload: '0x3b21028719a4aca7ebee35b0157a6f1b0cf0d0c5',
-          signature: ''
-        },
-        {
-          type: AuthLinkType.ECDSA_EIP_1654_EPHEMERAL,
-          payload:
-            'Decentraland Login\nEphemeral address: 0x69fBdE5Da06eb76e8E7F6Fd2FEEd968F28b951a5\nExpiration: Tue Aug 06 7112 10:14:51 GMT-0300 (Argentina Standard Time)',
-          signature:
-            '0x03524dbe44d19aacc8162b4d5d17820c370872de7bfd25d1add2b842adb1de546b454fc973b6d215883c30f4c21774ae71683869317d773f27e6bfaa9a2a05101b36946c3444914bb93f17a29d88e2449bcafdb6478b4835102c522197fa6f63d13ce5ab1d5c11c95db0c210fb4380995dff672392e5569c86d7c6bb2a44c53a151c'
-        },
-        {
-          type: AuthLinkType.ECDSA_PERSONAL_SIGNED_ENTITY,
-          payload: 'QmUsqJaHc5HQaBrojhBdjF4fr5MQc6CqhwZjqwhVRftNAo',
-          signature:
-            '0xd73b0315dd39080d9b6d1a613a56732a75d68d2cef2a38f3b7be12bdab3c59830c92c6bdf394dcb47ba1aa736e0338cf9112c9eee59dbe4109b8af6a993b12d71b'
-        }
-      ]
+    describe('when validating auth chain structure', () => {
+      it('should reject a chain that does not start with SIGNER', async function () {
+        jest.useFakeTimers({ doNotFake: ['performance'] }).setSystemTime(0)
+        const chain: AuthChain = [
+          {
+            type: AuthLinkType.ECDSA_EIP_1654_EPHEMERAL,
+            payload: '0xFAKEAddress',
+            signature: ''
+          },
+          {
+            type: AuthLinkType.SIGNER,
+            payload: '0x3b21028719a4aca7ebee35b0157a6f1b0cf0d0c5',
+            signature: ''
+          },
+          {
+            type: AuthLinkType.ECDSA_EIP_1654_EPHEMERAL,
+            payload:
+              'Decentraland Login\nEphemeral address: 0x69fBdE5Da06eb76e8E7F6Fd2FEEd968F28b951a5\nExpiration: Tue Aug 06 7112 10:14:51 GMT-0300 (Argentina Standard Time)',
+            signature:
+              '0x03524dbe44d19aacc8162b4d5d17820c370872de7bfd25d1add2b842adb1de546b454fc973b6d215883c30f4c21774ae71683869317d773f27e6bfaa9a2a05101b36946c3444914bb93f17a29d88e2449bcafdb6478b4835102c522197fa6f63d13ce5ab1d5c11c95db0c210fb4380995dff672392e5569c86d7c6bb2a44c53a151c'
+          },
+          {
+            type: AuthLinkType.ECDSA_PERSONAL_SIGNED_ENTITY,
+            payload: 'QmUsqJaHc5HQaBrojhBdjF4fr5MQc6CqhwZjqwhVRftNAo',
+            signature:
+              '0xd73b0315dd39080d9b6d1a613a56732a75d68d2cef2a38f3b7be12bdab3c59830c92c6bdf394dcb47ba1aa736e0338cf9112c9eee59dbe4109b8af6a993b12d71b'
+          }
+        ]
 
-      let result = await Authenticator.validateSignature(
-        'QmUsqJaHc5HQaBrojhBdjF4fr5MQc6CqhwZjqwhVRftNAo',
-        chain,
-        provider
-      )
+        const result = await Authenticator.validateSignature(
+          'QmUsqJaHc5HQaBrojhBdjF4fr5MQc6CqhwZjqwhVRftNAo',
+          chain,
+          mainnetProvider
+        )
 
-      expect(result.message).toMatch('ERROR: Malformed authChain')
-      expect(Authenticator.isValidAuthChain(chain)).toEqual(false)
+        expect(result.message).toMatch('ERROR: Malformed authChain')
+        expect(Authenticator.isValidAuthChain(chain)).toEqual(false)
+      })
 
-      chain = [
-        {
-          type: AuthLinkType.SIGNER,
-          payload: '0x3b21028719a4aca7ebee35b0157a6f1b0cf0d0c5',
-          signature: ''
-        },
-        {
-          type: AuthLinkType.SIGNER,
-          payload: '0xFAKEAddress',
-          signature: ''
-        },
-        {
-          type: AuthLinkType.ECDSA_EIP_1654_EPHEMERAL,
-          payload:
-            'Decentraland Login\nEphemeral address: 0x69fBdE5Da06eb76e8E7F6Fd2FEEd968F28b951a5\nExpiration: Tue Aug 06 7112 10:14:51 GMT-0300 (Argentina Standard Time)',
-          signature:
-            '0x03524dbe44d19aacc8162b4d5d17820c370872de7bfd25d1add2b842adb1de546b454fc973b6d215883c30f4c21774ae71683869317d773f27e6bfaa9a2a05101b36946c3444914bb93f17a29d88e2449bcafdb6478b4835102c522197fa6f63d13ce5ab1d5c11c95db0c210fb4380995dff672392e5569c86d7c6bb2a44c53a151c'
-        },
-        {
-          type: AuthLinkType.ECDSA_PERSONAL_SIGNED_ENTITY,
-          payload: 'QmUsqJaHc5HQaBrojhBdjF4fr5MQc6CqhwZjqwhVRftNAo',
-          signature:
-            '0xd73b0315dd39080d9b6d1a613a56732a75d68d2cef2a38f3b7be12bdab3c59830c92c6bdf394dcb47ba1aa736e0338cf9112c9eee59dbe4109b8af6a993b12d71b'
-        }
-      ]
+      it('should reject a chain with SIGNER as the second element', async function () {
+        jest.useFakeTimers({ doNotFake: ['performance'] }).setSystemTime(0)
+        const chain: AuthChain = [
+          {
+            type: AuthLinkType.SIGNER,
+            payload: '0x3b21028719a4aca7ebee35b0157a6f1b0cf0d0c5',
+            signature: ''
+          },
+          {
+            type: AuthLinkType.SIGNER,
+            payload: '0xFAKEAddress',
+            signature: ''
+          },
+          {
+            type: AuthLinkType.ECDSA_EIP_1654_EPHEMERAL,
+            payload:
+              'Decentraland Login\nEphemeral address: 0x69fBdE5Da06eb76e8E7F6Fd2FEEd968F28b951a5\nExpiration: Tue Aug 06 7112 10:14:51 GMT-0300 (Argentina Standard Time)',
+            signature:
+              '0x03524dbe44d19aacc8162b4d5d17820c370872de7bfd25d1add2b842adb1de546b454fc973b6d215883c30f4c21774ae71683869317d773f27e6bfaa9a2a05101b36946c3444914bb93f17a29d88e2449bcafdb6478b4835102c522197fa6f63d13ce5ab1d5c11c95db0c210fb4380995dff672392e5569c86d7c6bb2a44c53a151c'
+          },
+          {
+            type: AuthLinkType.ECDSA_PERSONAL_SIGNED_ENTITY,
+            payload: 'QmUsqJaHc5HQaBrojhBdjF4fr5MQc6CqhwZjqwhVRftNAo',
+            signature:
+              '0xd73b0315dd39080d9b6d1a613a56732a75d68d2cef2a38f3b7be12bdab3c59830c92c6bdf394dcb47ba1aa736e0338cf9112c9eee59dbe4109b8af6a993b12d71b'
+          }
+        ]
 
-      result = await Authenticator.validateSignature('QmUsqJaHc5HQaBrojhBdjF4fr5MQc6CqhwZjqwhVRftNAo', chain, provider)
-      expect(Authenticator.isValidAuthChain(chain)).toEqual(false)
+        const result = await Authenticator.validateSignature(
+          'QmUsqJaHc5HQaBrojhBdjF4fr5MQc6CqhwZjqwhVRftNAo',
+          chain,
+          mainnetProvider
+        )
 
-      expect(result.message).toMatch('ERROR: Malformed authChain')
+        expect(result.message).toMatch('ERROR: Malformed authChain')
+        expect(Authenticator.isValidAuthChain(chain)).toEqual(false)
+      })
 
-      chain = [
-        {
-          type: AuthLinkType.SIGNER,
-          payload: '0xFAKEAddress',
-          signature: ''
-        },
-        {
-          type: AuthLinkType.SIGNER,
-          payload: '0x3b21028719a4aca7ebee35b0157a6f1b0cf0d0c5',
-          signature: ''
-        },
-        {
-          type: AuthLinkType.ECDSA_EIP_1654_EPHEMERAL,
-          payload:
-            'Decentraland Login\nEphemeral address: 0x69fBdE5Da06eb76e8E7F6Fd2FEEd968F28b951a5\nExpiration: Tue Aug 06 7112 10:14:51 GMT-0300 (Argentina Standard Time)',
-          signature:
-            '0x03524dbe44d19aacc8162b4d5d17820c370872de7bfd25d1add2b842adb1de546b454fc973b6d215883c30f4c21774ae71683869317d773f27e6bfaa9a2a05101b36946c3444914bb93f17a29d88e2449bcafdb6478b4835102c522197fa6f63d13ce5ab1d5c11c95db0c210fb4380995dff672392e5569c86d7c6bb2a44c53a151c'
-        },
-        {
-          type: AuthLinkType.ECDSA_PERSONAL_SIGNED_ENTITY,
-          payload: 'QmUsqJaHc5HQaBrojhBdjF4fr5MQc6CqhwZjqwhVRftNAo',
-          signature:
-            '0xd73b0315dd39080d9b6d1a613a56732a75d68d2cef2a38f3b7be12bdab3c59830c92c6bdf394dcb47ba1aa736e0338cf9112c9eee59dbe4109b8af6a993b12d71b'
-        }
-      ]
+      it('should reject a chain with multiple SIGNER elements', async function () {
+        jest.useFakeTimers({ doNotFake: ['performance'] }).setSystemTime(0)
+        const chain: AuthChain = [
+          {
+            type: AuthLinkType.SIGNER,
+            payload: '0xFAKEAddress',
+            signature: ''
+          },
+          {
+            type: AuthLinkType.SIGNER,
+            payload: '0x3b21028719a4aca7ebee35b0157a6f1b0cf0d0c5',
+            signature: ''
+          },
+          {
+            type: AuthLinkType.ECDSA_EIP_1654_EPHEMERAL,
+            payload:
+              'Decentraland Login\nEphemeral address: 0x69fBdE5Da06eb76e8E7F6Fd2FEEd968F28b951a5\nExpiration: Tue Aug 06 7112 10:14:51 GMT-0300 (Argentina Standard Time)',
+            signature:
+              '0x03524dbe44d19aacc8162b4d5d17820c370872de7bfd25d1add2b842adb1de546b454fc973b6d215883c30f4c21774ae71683869317d773f27e6bfaa9a2a05101b36946c3444914bb93f17a29d88e2449bcafdb6478b4835102c522197fa6f63d13ce5ab1d5c11c95db0c210fb4380995dff672392e5569c86d7c6bb2a44c53a151c'
+          },
+          {
+            type: AuthLinkType.ECDSA_PERSONAL_SIGNED_ENTITY,
+            payload: 'QmUsqJaHc5HQaBrojhBdjF4fr5MQc6CqhwZjqwhVRftNAo',
+            signature:
+              '0xd73b0315dd39080d9b6d1a613a56732a75d68d2cef2a38f3b7be12bdab3c59830c92c6bdf394dcb47ba1aa736e0338cf9112c9eee59dbe4109b8af6a993b12d71b'
+          }
+        ]
 
-      result = await Authenticator.validateSignature('QmUsqJaHc5HQaBrojhBdjF4fr5MQc6CqhwZjqwhVRftNAo', chain, provider)
-      expect(result.message).toMatch('ERROR: Malformed authChain')
-      expect(Authenticator.isValidAuthChain(chain)).toEqual(false)
+        const result = await Authenticator.validateSignature(
+          'QmUsqJaHc5HQaBrojhBdjF4fr5MQc6CqhwZjqwhVRftNAo',
+          chain,
+          mainnetProvider
+        )
 
-      // Restore
-      jest.useRealTimers()
+        expect(result.message).toMatch('ERROR: Malformed authChain')
+        expect(Authenticator.isValidAuthChain(chain)).toEqual(false)
+      })
 
-      chain = [
-        {
-          type: AuthLinkType.SIGNER,
-          payload: '0x3b21028719a4aca7ebee35b0157a6f1b0cf0d0c5',
-          signature: ''
-        },
-        {
-          type: AuthLinkType.ECDSA_EIP_1654_EPHEMERAL,
-          payload:
-            'Decentraland Login\nEphemeral address: 0x69fBdE5Da06eb76e8E7F6Fd2FEEd968F28b951a5\nExpiration: Tue Aug 06 7112 10:14:51 GMT-0300 (Argentina Standard Time)',
-          signature:
-            '0x03524dbe44d19aacc8162b4d5d17820c370872de7bfd25d1add2b842adb1de546b454fc973b6d215883c30f4c21774ae71683869317d773f27e6bfaa9a2a05101b36946c3444914bb93f17a29d88e2449bcafdb6478b4835102c522197fa6f63d13ce5ab1d5c11c95db0c210fb4380995dff672392e5569c86d7c6bb2a44c53a151c'
-        },
-        {
-          type: AuthLinkType.ECDSA_PERSONAL_SIGNED_ENTITY,
-          payload: 'QmUsqJaHc5HQaBrojhBdjF4fr5MQc6CqhwZjqwhVRftNAo',
-          signature:
-            '0xd73b0315dd39080d9b6d1a613a56732a75d68d2cef2a38f3b7be12bdab3c59830c92c6bdf394dcb47ba1aa736e0338cf9112c9eee59dbe4109b8af6a993b12d71b'
-        }
-      ]
-      expect(Authenticator.isValidAuthChain(chain)).toEqual(true)
+      it('should accept a well-formed auth chain', function () {
+        const chain: AuthChain = [
+          {
+            type: AuthLinkType.SIGNER,
+            payload: '0x3b21028719a4aca7ebee35b0157a6f1b0cf0d0c5',
+            signature: ''
+          },
+          {
+            type: AuthLinkType.ECDSA_EIP_1654_EPHEMERAL,
+            payload:
+              'Decentraland Login\nEphemeral address: 0x69fBdE5Da06eb76e8E7F6Fd2FEEd968F28b951a5\nExpiration: Tue Aug 06 7112 10:14:51 GMT-0300 (Argentina Standard Time)',
+            signature:
+              '0x03524dbe44d19aacc8162b4d5d17820c370872de7bfd25d1add2b842adb1de546b454fc973b6d215883c30f4c21774ae71683869317d773f27e6bfaa9a2a05101b36946c3444914bb93f17a29d88e2449bcafdb6478b4835102c522197fa6f63d13ce5ab1d5c11c95db0c210fb4380995dff672392e5569c86d7c6bb2a44c53a151c'
+          },
+          {
+            type: AuthLinkType.ECDSA_PERSONAL_SIGNED_ENTITY,
+            payload: 'QmUsqJaHc5HQaBrojhBdjF4fr5MQc6CqhwZjqwhVRftNAo',
+            signature:
+              '0xd73b0315dd39080d9b6d1a613a56732a75d68d2cef2a38f3b7be12bdab3c59830c92c6bdf394dcb47ba1aa736e0338cf9112c9eee59dbe4109b8af6a993b12d71b'
+          }
+        ]
+
+        expect(Authenticator.isValidAuthChain(chain)).toEqual(true)
+      })
     })
   })
 })
