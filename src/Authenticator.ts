@@ -368,7 +368,7 @@ export function parseEphemeralPayload(payload: string): {
   return { message, ephemeralAddress, expiration }
 }
 
-// Kept for backwards compatibility with a historical typo in the export name.
+/** @deprecated Use `parseEphemeralPayload` instead. Kept for backwards compatibility with a historical typo in the export name. */
 export const parseEmphemeralPayload = parseEphemeralPayload
 
 export async function isValidEIP1271Signature(
