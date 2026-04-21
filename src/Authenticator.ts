@@ -347,7 +347,11 @@ export function parseEphemeralPayload(payload: string): {
   const ephemeralPrefix = 'Ephemeral address: '
   const expirationPrefix = 'Expiration: '
 
-  if (payloadParts.length < 3 || !payloadParts[1].startsWith(ephemeralPrefix) || !payloadParts[2].startsWith(expirationPrefix)) {
+  if (
+    payloadParts.length < 3 ||
+    !payloadParts[1].startsWith(ephemeralPrefix) ||
+    !payloadParts[2].startsWith(expirationPrefix)
+  ) {
     throw new Error(
       `Invalid ephemeral payload. Expected 3 lines with "${ephemeralPrefix}" on line 2 and "${expirationPrefix}" on line 3.`
     )
