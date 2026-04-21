@@ -50,9 +50,10 @@ export namespace Authenticator {
         })
         currentAuthority = nextAuthority ? nextAuthority : ''
       } catch (e) {
+        const message = e instanceof Error ? e.message : String(e)
         return {
           ok: false,
-          message: `ERROR. Link type: ${authLink.type}. ${e.message}.`
+          message: `ERROR. Link type: ${authLink.type}. ${message}.`
         }
       }
     }
@@ -84,6 +85,8 @@ export namespace Authenticator {
   }
 
   // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1271.md
+  // Note: intentionally does NOT apply the "\x19Ethereum Signed Message:\n" prefix —
+  // EIP-1271 wallets verify against the raw keccak256 of the message bytes.
   export function createEIP1271MessageHash(msg: string) {
     return hexToBytes(sha3(stringToUtf8Bytes(msg)))
   }
@@ -146,8 +149,7 @@ export namespace Authenticator {
     ephemeralMinutesDuration: number,
     signer: (message: string) => Promise<string>
   ): Promise<AuthIdentity> {
-    const expiration = new Date()
-    expiration.setMinutes(expiration.getMinutes() + ephemeralMinutesDuration)
+    const expiration = moveMinutes(ephemeralMinutesDuration)
 
     const ephemeralMessage = Authenticator.getEphemeralMessage(ephemeralIdentity.address, expiration)
     const firstSignature = await signer(ephemeralMessage)
@@ -238,7 +240,7 @@ export const ECDSA_PERSONAL_EPHEMERAL_VALIDATOR: ValidatorType = async (
   if (!authLink.signature) {
     throw new Error(`Invalid AuthLink. 'signature' must be present for type 'ECDSA_PERSONAL_EPHEMERAL_VALIDATOR'`)
   }
-  const { message, ephemeralAddress, expiration } = parseEmphemeralPayload(authLink.payload)
+  const { message, ephemeralAddress, expiration } = parseEphemeralPayload(authLink.payload)
 
   const dateToValidateExpirationInMillis = options!.dateToValidateExpirationInMillis
     ? options!.dateToValidateExpirationInMillis
@@ -267,7 +269,7 @@ export const ECDSA_EIP_1654_EPHEMERAL_VALIDATOR: ValidatorType = async (
   if (!authLink.signature) {
     throw new Error(`Invalid AuthLink. 'signature' must be present for type 'ECDSA_EIP_1654_EPHEMERAL_VALIDATOR'`)
   }
-  const { message, ephemeralAddress, expiration } = parseEmphemeralPayload(authLink.payload)
+  const { message, ephemeralAddress, expiration } = parseEphemeralPayload(authLink.payload)
 
   const dateToValidateExpirationInMillis = options?.dateToValidateExpirationInMillis
     ? options?.dateToValidateExpirationInMillis
@@ -332,22 +334,38 @@ export function getSignedIdentitySignatureType(signature: string): AuthLinkType 
   }
 }
 
-export function parseEmphemeralPayload(payload: string): {
+export function parseEphemeralPayload(payload: string): {
   message: string
   ephemeralAddress: string
   expiration: number
 } {
-  // authLink payload structure: <human-readable message >\nEphemeral address: <ephemeral-eth - address >\nExpiration: <timestamp>
-  // authLink payload example: Decentraland Login\nEphemeral address: 0x123456\nExpiration: 2020 - 01 - 20T22: 57: 11.334Z
+  // authLink payload structure: <human-readable message>\nEphemeral address: <ephemeral-eth-address>\nExpiration: <timestamp>
+  // authLink payload example: Decentraland Login\nEphemeral address: 0x123456\nExpiration: 2020-01-20T22:57:11.334Z
   const message = payload.replace(/\r/g, '')
   const payloadParts: string[] = message.split('\n')
-  const ephemeralAddress: string = payloadParts[1].substring('Ephemeral address: '.length)
-  const expirationString: string = payloadParts[2].substring('Expiration: '.length)
+
+  const ephemeralPrefix = 'Ephemeral address: '
+  const expirationPrefix = 'Expiration: '
+
+  if (payloadParts.length < 3 || !payloadParts[1].startsWith(ephemeralPrefix) || !payloadParts[2].startsWith(expirationPrefix)) {
+    throw new Error(
+      `Invalid ephemeral payload. Expected 3 lines with "${ephemeralPrefix}" on line 2 and "${expirationPrefix}" on line 3.`
+    )
+  }
+
+  const ephemeralAddress: string = payloadParts[1].substring(ephemeralPrefix.length)
+  const expirationString: string = payloadParts[2].substring(expirationPrefix.length)
 
   const expiration = Date.parse(expirationString)
+  if (Number.isNaN(expiration)) {
+    throw new Error(`Invalid expiration date in ephemeral payload: "${expirationString}"`)
+  }
 
   return { message, ephemeralAddress, expiration }
 }
+
+// Kept for backwards compatibility with a historical typo in the export name.
+export const parseEmphemeralPayload = parseEphemeralPayload
 
 export async function isValidEIP1271Signature(
   signatureValidator: SignatureValidator,
@@ -409,7 +427,8 @@ async function isValidEIP1654Message(
       return true
     }
   } catch (e) {
-    throw new Error(`Invalid validation. Error: ${e.message}`)
+    const message = e instanceof Error ? e.message : String(e)
+    throw new Error(`Invalid validation. Error: ${message}`)
   }
 
   throw new Error(`Invalid validation. Expected: ${ERC1654_MAGIC_VALUE}. Actual: ${result}`)

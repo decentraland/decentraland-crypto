@@ -21,9 +21,7 @@ export default class Blocks {
   constructor(private requestManager: RequestManager, save: boolean = true) {
     this.checkedBlocks = {}
     this.saveBlocks = save
-    if (save) {
-      this.savedBlocks = {}
-    }
+    this.savedBlocks = {}
     this.requests = 0
   }
 
@@ -31,7 +29,7 @@ export default class Blocks {
     const latest = await this.getBlockWrapper('latest')
     const first = await this.getBlockWrapper(1)
 
-    this.blockTime = (latest.timestamp - first.timestamp) / Number(latest.number) - 1
+    this.blockTime = (latest.timestamp - first.timestamp) / (Number(latest.number) - 1)
     this.firstTimestamp = first.timestamp
   }
 
@@ -50,7 +48,8 @@ export default class Blocks {
       }
     }
 
-    if (dateInSeconds >= now || dateInSeconds > this.savedBlocks['latest'].timestamp) {
+    const latestCached = this.savedBlocks['latest']
+    if (dateInSeconds >= now || (latestCached && dateInSeconds > latestCached.timestamp)) {
       return {
         block: toBigNumber(await this.requestManager.eth_blockNumber()).toNumber(),
         timestamp: dateInSeconds
@@ -60,7 +59,7 @@ export default class Blocks {
     this.checkedBlocks[dateInSeconds] = []
 
     const predictedBlock = await this.getBlockWrapper(
-      Math.ceil((dateInSeconds - this.firstTimestamp! / this.blockTime!) / 1000)
+      Math.ceil((dateInSeconds - this.firstTimestamp!) / this.blockTime!)
     )
 
     return {
@@ -117,11 +116,15 @@ export default class Blocks {
     return false
   }
 
-  getNextBlock(date: number, currentBlock: number, skip: number) {
+  getNextBlock(date: number, currentBlock: number, skip: number): number {
     const nextBlock = currentBlock + skip
 
     if (this.checkedBlocks[date].includes(nextBlock)) {
-      return this.getNextBlock(date, currentBlock, skip < 0 ? ++skip : --skip)
+      const newSkip = skip < 0 ? skip + 1 : skip - 1
+      if (newSkip === 0) {
+        throw new Error(`Could not find an unchecked block for timestamp ${date}`)
+      }
+      return this.getNextBlock(date, currentBlock, newSkip)
     }
 
     this.checkedBlocks[date].push(nextBlock)
@@ -138,8 +141,10 @@ export default class Blocks {
       }
     }
 
-    if (this.savedBlocks[block.toString()]) {
-      return this.savedBlocks[block]
+    const key = block.toString()
+
+    if (this.savedBlocks[key]) {
+      return this.savedBlocks[key]
     }
 
     if (typeof block === 'number' && this.savedBlocks['latest'] && this.savedBlocks['latest'].number <= block) {
@@ -148,13 +153,13 @@ export default class Blocks {
 
     const { timestamp } = await this.requestManager.eth_getBlockByNumber(block, false)
 
-    this.savedBlocks[block.toString()] = {
+    this.savedBlocks[key] = {
       number: toBigNumber(block === 'latest' ? await this.requestManager.eth_blockNumber() : block).toNumber(),
       timestamp: toBigNumber(timestamp).toNumber()
     }
 
     this.requests++
 
-    return this.savedBlocks[block.toString()]
+    return this.savedBlocks[key]
   }
 }

@@ -8,12 +8,16 @@ import { secp256k1 } from 'ethereum-cryptography/secp256k1'
  */
 export function recoverPublicKey(signature: Uint8Array, hash: Uint8Array): Uint8Array {
   if (signature.length !== 65) {
-    throw new Error('Invalid signature length' + signature.length)
+    throw new Error('Invalid signature length ' + signature.length)
   }
 
-  // split into v-value and sig
-  const sigOnly = signature.slice(0, signature.length - 1) // all but last 2 chars
-  const recoveryNumber = signature[64] === 0x1c ? 1 : 0
+  const v = signature[64]
+  if (v !== 0x1b && v !== 0x1c) {
+    throw new Error(`Invalid signature recovery value: ${v}. Expected 27 or 28.`)
+  }
+
+  const sigOnly = signature.slice(0, signature.length - 1)
+  const recoveryNumber = v === 0x1c ? 1 : 0
   const pubKey = secp256k1.Signature.fromCompact(sigOnly)
     .addRecoveryBit(recoveryNumber)
     .recoverPublicKey(hash)
@@ -67,8 +71,17 @@ export function ethSign(privateKey: Uint8Array, message: Uint8Array | string): s
 }
 
 export function computeAddress(key: Uint8Array): string {
-  // Strip off the leading "0x04"
-  const publicKey = key.length === 65 && key[0] === 0x04 ? key.slice(1) : key
+  let publicKey: Uint8Array
+  if (key.length === 65 && key[0] === 0x04) {
+    // Strip off the leading "0x04" uncompressed prefix
+    publicKey = key.slice(1)
+  } else if (key.length === 64) {
+    publicKey = key
+  } else {
+    throw new Error(
+      `Invalid public key length: ${key.length}. Expected 64 bytes, or 65 bytes with a leading 0x04 uncompressed prefix.`
+    )
+  }
   return getAddress(sha3(publicKey).substring(24))
 }
 
