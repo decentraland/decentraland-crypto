@@ -1,5 +1,11 @@
 # DCL Auth Crypto Lib
 
+> **This repository is deprecated.**
+>
+> The `@dcl/crypto` library has been moved to the [core-libs monorepo](https://github.com/decentraland/core-libs) and is now maintained under [`libs/crypto`](https://github.com/decentraland/core-libs/tree/main/libs/crypto). Please open issues and pull requests there.
+
+---
+
 [![NPM version](https://badge.fury.io/js/dcl-crypto.svg)](https://npmjs.org/package/dcl-crypto@latest)
 [![Install Size](https://packagephobia.now.sh/badge?p=dcl-crypto@latest)](https://packagephobia.now.sh/result?p=dcl-crypto@latest)
 
